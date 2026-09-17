@@ -28,7 +28,7 @@
   <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
     <div><label class="lbl">日期</label><input type="date" id="purchaseDate" class="inp"></div>
     <div><label class="lbl">来源矿点</label><input type="text" id="purchaseFrom" class="inp"></div>
-    <div><label class="lbl">收货煤场</label><input type="text" id="purchaseTo" class="inp"></div>
+    <div><label class="lbl">收货煤场</label><select id="purchaseTo" class="inp"><option value="西华煤场">西华煤场</option><option value="禹州煤场">禹州煤场</option><option value="告成煤场">告成煤场</option><option value="叶县煤场">叶县煤场</option></select></div>
     <div><label class="lbl">收货人</label><input type="text" id="receiver" class="inp"></div>
     <div><label class="lbl">矿发重量(吨)</label><input type="number" step="0.01" id="origTon" class="inp"></div>
     <div><label class="lbl">厂收重量(吨)</label><input type="number" step="0.01" id="settleTon" class="inp" oninput="updateTotalAmount()"></div>
