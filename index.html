@@ -68,6 +68,35 @@
   </div>
 </div>
 
+<!-- 销售记录 -->
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-4">
+  <div class="flex items-center gap-2 mb-4">
+    <div class="w-1.5 h-6 rounded bg-indigo-600"></div>
+    <h3 class="text-lg font-bold text-slate-800">📤 销售记录</h3>
+  </div>
+  <div class="border border-slate-200 rounded-xl overflow-x-auto">
+    <table class="w-full text-sm" style="table-layout:fixed">
+      <colgroup>
+        <col style="width:11%"><col style="width:11%"><col style="width:12%">
+        <col style="width:11%"><col style="width:11%"><col style="width:11%">
+        <col style="width:11%"><col style="width:11%"><col style="width:11%">
+      </colgroup>
+      <thead><tr class="bg-slate-100 text-slate-700">
+        <th class="px-2 py-2.5 text-left font-semibold">日期</th>
+        <th class="px-2 py-2.5 text-left font-semibold">出货煤场</th>
+        <th class="px-2 py-2.5 text-left font-semibold">购货单位</th>
+        <th class="px-2 py-2.5 text-right font-semibold">销售过磅吨</th>
+        <th class="px-2 py-2.5 text-right font-semibold">销售单价</th>
+        <th class="px-2 py-2.5 text-right font-semibold">到厂重量</th>
+        <th class="px-2 py-2.5 text-right font-semibold">销售金额</th>
+        <th class="px-2 py-2.5 text-right font-semibold">总金额</th>
+        <th class="px-2 py-2.5 text-right font-semibold">毛利</th>
+      </tr></thead>
+      <tbody id="saleRecordBody"></tbody>
+    </table>
+  </div>
+</div>
+
 <script src="data.js"></script>
 <script>
 // 财务结算单格：状态 / 金额 / 备注
@@ -121,6 +150,29 @@ function renderStockDetail(){
   </tr>`;
   sd.innerHTML = rows;
 }
+// 总览看板：销售记录
+function renderSaleRecords(){
+  const tb = document.getElementById("saleRecordBody");
+  tb.innerHTML = "";
+  if(!saleList.length){
+    tb.innerHTML = `<tr><td colspan="9" class="text-center text-gray-400 py-4">暂无销售记录</td></tr>`;
+    return;
+  }
+  saleList.forEach(r=>{
+    const profit = r.saleProfit||0;
+    tb.innerHTML += `<tr class="border-t border-slate-100 odd:bg-white even:bg-slate-50/50">
+      <td class="px-2 py-2.5">${r.saleDate||""}</td>
+      <td class="px-2 py-2.5">${r.saleNo||""}</td>
+      <td class="px-2 py-2.5">${r.buyCompany||""}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${(r.saleWeight||0).toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${r.saleSellPrice?(r.saleSellPrice.toFixed(2)):"0.00"}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${r.saleArriveW?(r.saleArriveW.toFixed(2)):"0.00"}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums font-semibold">${r.saleSellAmount||0}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${r.saleTotalAmount||0}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums font-semibold" style="color:${profit>=0?"#16a34a":"#dc2626"}">${profit}</td>
+    </tr>`;
+  });
+}
 function renderBoard(){
   const stock = calcStock();
   const fin = calcFinance();
@@ -147,6 +199,8 @@ function renderBoard(){
 
   // 库存明细
   renderStockDetail();
+  // 销售记录
+  renderSaleRecords();
 
   // 财务结算核对表（逐批次）
   const fb=document.getElementById("finCheckBody");
