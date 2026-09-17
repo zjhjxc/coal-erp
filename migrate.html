@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>数据迁移 - 煤炭进销存</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+<div class="max-w-3xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-4">数据迁移工具</h1>
+  <p class="text-sm text-gray-600 mb-4">用于把旧页面（file://）里的历史数据搬到新系统（http:// 访问），并上传云端实现多设备同步。</p>
+
+  <div class="bg-white rounded shadow p-4 mb-4">
+    <h2 class="font-semibold mb-2">第 1 步：导出旧数据</h2>
+    <p class="text-xs text-gray-500 mb-2">在<strong>旧方式打开的系统页</strong>（file:// 那种）里打开本页，点下方按钮，数据会出现在文本框，点复制全部复制。</p>
+    <button onclick="exportData()" class="px-4 py-2 bg-blue-600 text-white rounded">导出本地数据</button>
+  </div>
+
+  <div class="bg-white rounded shadow p-4 mb-4">
+    <h2 class="font-semibold mb-2">第 2 步：粘贴数据（在新方式打开的页面操作）</h2>
+    <p class="text-xs text-gray-500 mb-2">在<strong>新的 http:// 方式</strong>打开的本页里，把刚才复制的内容粘贴进下面文本框，点导入。</p>
+    <textarea id="ta" rows="8" class="w-full border p-2 text-xs font-mono" placeholder="把第1步复制的内容粘贴到这里"></textarea>
+    <button onclick="importData()" class="mt-2 px-4 py-2 bg-green-600 text-white rounded">导入数据并同步云端</button>
+    <p id="msg" class="text-sm mt-2"></p>
+  </div>
+
+  <div class="text-xs text-gray-400 mt-6">
+    注意：<br>
+    1. 导出复制的是本浏览器本页面的数据（采购、销售、配煤、用户等）。<br>
+    2. 导入会把数据写入当前访问方式的存储，并自动上传到云端，供手机和其他设备同步。<br>
+    3. 完成后回到登录页，用 丁浩伦/123456 登录即可看到数据。
+  </div>
+</div>
+<script src="data.js"></script>
+<script>
+function collectLocal(){
+  const out={};
+  for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&(k.indexOf('coalData_')===0||k==='coalUsers'||k==='coalSession')){out[k]=localStorage.getItem(k);}}
+  return out;
+}
+function exportData(){
+  const obj=collectLocal();
+  if(!Object.keys(obj).length){ document.getElementById('ta').value=''; document.getElementById('msg').textContent='当前没有可导出的业务数据（本地为空）。'; return; }
+  document.getElementById('ta').value = JSON.stringify(obj);
+  document.getElementById('msg').textContent='已导出 '+Object.keys(obj).length+' 项数据，请复制。';
+  document.getElementById('ta').select();
+}
+function importData(){
+  const txt=document.getElementById('ta').value;
+  if(!txt){ document.getElementById('msg').textContent='请先粘贴数据。'; return; }
+  try{
+    const obj=JSON.parse(txt);
+    let n=0;
+    for(const k in obj){ if(k==='coalSession') continue; localStorage.setItem(k,obj[k]); n++; }
+    // 写入后加载并上传云端
+    loadAllData();
+    saveUsers(loadUsers());
+    document.getElementById('msg').textContent='导入完成：写入 '+n+' 项，已自动上传云端。可回登录页使用。';
+  }catch(e){ document.getElementById('msg').textContent='导入失败：'+e.message; }
+}
+</script>
+</body>
+</html>
