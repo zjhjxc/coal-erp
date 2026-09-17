@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>销售出库 - 煤炭进销存</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-4 bg-gray-100">
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-xl font-bold">销售出库</h1>
+  <div id="userbar"></div>
+</div>
+<div id="nav" class="mb-4"></div>
+
+<div class="p-4 border rounded bg-gray-50" id="saleFormWrap">
+  <h3 class="text-lg font-bold mb-3">📤 新增销售出库</h3>
+  <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
+    <div>日期：<input type="date" id="saleDate" class="border p-1 w-full"></div>
+    <div>出货煤场：<input type="text" id="saleNo" class="border p-1 w-full"></div>
+    <div>购货单位：<input type="text" id="buyCompany" class="border p-1 w-full"></div>
+    <div>出库矿点1：
+      <select id="saleExMine1" class="border p-1 w-full" onchange="updateSaleCost();updateSaleTotal()"><option value="-1">请选择库存批次</option></select>
+    </div>
+    <div>出库重量(吨)：<input type="number" step="0.01" min="0" id="saleExW1" class="border p-1 w-full" oninput="updateSaleWeight()"></div>
+    <div>出库1金额(元)：<input type="number" step="1" id="saleExAmount1" class="border p-1 w-full bg-gray-100" readonly></div>
+    <div>出库矿点2：
+      <select id="saleExMine2" class="border p-1 w-full" onchange="updateSaleCost();updateSaleTotal()"><option value="-1">请选择库存批次</option></select>
+    </div>
+    <div>出库重量(吨)：<input type="number" step="0.01" min="0" id="saleExW2" class="border p-1 w-full" oninput="updateSaleWeight()"></div>
+    <div>出库2金额(元)：<input type="number" step="1" id="saleExAmount2" class="border p-1 w-full bg-gray-100" readonly></div>
+    <div>销售过磅重量(吨)：<input type="number" step="0.01" id="saleWeight" class="border p-1 w-full" oninput="updateSaleTotal()"></div>
+    <div>运费单价(元/吨)：<input type="number" step="0.01" id="saleFreightPrice" class="border p-1 w-full" oninput="updateFreightAmount()"></div>
+    <div>运费金额(元)：<input type="number" step="1" id="saleFreightAmount" class="border p-1 w-full" oninput="updateSaleTotal()"></div>
+    <div>成本单价(元/吨)：<input type="number" step="0.01" id="saleUnitPrice" class="border p-1 w-full bg-gray-100" readonly></div>
+    <div>成本金额(元)：<input type="number" step="1" id="saleCostAmount" class="border p-1 w-full bg-gray-100" readonly></div>
+    <div>总金额(元)：<input type="number" step="1" id="saleTotalAmount" class="border p-1 w-full bg-gray-100" readonly></div>
+    <div>销售单价(元/吨)：<input type="number" step="0.01" id="saleSellPrice" class="border p-1 w-full" oninput="updateSaleSell()"></div>
+    <div>到厂重量(吨)：<input type="number" step="0.01" id="saleArriveW" class="border p-1 w-full" oninput="updateSaleSell()"></div>
+    <div>销售金额(元)：<input type="number" step="1" id="saleSellAmount" class="border p-1 w-full bg-gray-100" readonly></div>
+  </div>
+  <button onclick="addSale()" class="px-4 py-2 bg-green-500 text-white rounded">新增销售出库</button>
+</div>
+
+<div class="p-4 border rounded bg-gray-50 mt-4">
+  <h3 class="text-lg font-bold mb-3">📋 销售记录</h3>
+  <div class="border p-3 rounded bg-white overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead><tr>
+        <th>日期</th><th>出货煤场</th><th>购货单位</th><th>出库矿点1</th><th>出库重量</th><th>出库矿点2</th><th>出库重量</th><th>销售过磅吨</th><th>运费单价</th><th>运费金额</th><th>成本单价</th><th>成本金额</th><th>总金额</th><th>销售单价</th><th>到厂重量</th><th>销售金额</th>
+        <th>销售收入</th><th>毛利</th><th>吨煤毛利</th><th>操作</th>
+      </tr></thead>
+      <tbody id="saleTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+// 成本单价自动生成 = 库存均价
+function autofillCostUnitPrice(){
+  const el=document.getElementById("saleUnitPrice"); if(!el) return;
+  const st=calcStock();
+  if(st && st.avgCostPrice>0) el.value=st.avgCostPrice;
+}
+// 成本金额 = 出库1金额 + 出库2金额；出库金额 = 出库重量 × 所选批次单价(总成本÷厂收吨)
+function updateSaleCost(){
+  const n=id=>parseFloat(document.getElementById(id).value)||0;
+  const batchUnit=(bi)=>{ if(bi<0) return 0; const b=purchaseList[bi]; return b ? (b.tonCostAll||0) : 0; };
+  const v1=parseInt(document.getElementById("saleExMine1").value); const u1=batchUnit(isNaN(v1)?-1:v1);
+  const v2=parseInt(document.getElementById("saleExMine2").value); const u2=batchUnit(isNaN(v2)?-1:v2);
+  const a1=roundInt(n("saleExW1")*u1);
+  const a2=roundInt(n("saleExW2")*u2);
+  const s1=document.getElementById("saleExAmount1"), s2=document.getElementById("saleExAmount2");
+  if(s1) s1.value = a1 ? a1 : "";
+  if(s2) s2.value = a2 ? a2 : "";
+  const el=document.getElementById("saleCostAmount");
+  if(el) el.value = (a1+a2) ? (a1+a2) : "";
+}
+// 销售过磅重量 = 出库重量1 + 出库重量2，自动求和
+function updateSaleWeight(){
+  const n=id=>parseFloat(document.getElementById(id).value)||0;
+  const w=n("saleExW1")+n("saleExW2");
+  const el=document.getElementById("saleWeight");
+  if(el) el.value = w ? w : "";
+  updateSaleCost();
+  updateFreightAmount();
+  updateSaleTotal();
+}
+// 运费金额 = 运费单价 × 销售过磅重量
+function updateFreightAmount(){
+  const n=id=>parseFloat(document.getElementById(id).value)||0;
+  const f=roundInt(n("saleFreightPrice")*n("saleWeight"));
+  const el=document.getElementById("saleFreightAmount");
+  if(el) el.value = f ? f : "";
+  updateSaleTotal();
+}
+// 总金额自动计算 = 运费金额 + 煤款(销售重量×单价)
+function updateSaleTotal(){
+  const n=id=>parseFloat(document.getElementById(id).value)||0;
+  const a1=n("saleExAmount1"), a2=n("saleExAmount2"), f=n("saleFreightAmount");
+  const total = roundInt(a1+a2+f);
+  const el=document.getElementById("saleTotalAmount");
+  if(el) el.value = total ? total : "";
+  // 成本单价 = 总金额 ÷ 销售过磅重量
+  const w=n("saleWeight");
+  const up=document.getElementById("saleUnitPrice");
+  if(up) up.value = (w>0 && total) ? (total/w).toFixed(2) : "";
+}
+// 销售金额 = 销售单价 × 到厂重量
+function updateSaleSell(){
+  const n=id=>parseFloat(document.getElementById(id).value)||0;
+  const s=roundInt(n("saleSellPrice")*n("saleArriveW"));
+  const el=document.getElementById("saleSellAmount");
+  if(el) el.value = s ? s : "";
+}
+function addSale(){
+  const g=id=>document.getElementById(id).value;
+  const n=id=>parseFloat(g(id))||0;
+  const saleDate=g("saleDate"), saleNo=g("saleNo").trim();
+  const saleWeight=n("saleWeight");
+  let saleUnitPrice=n("saleUnitPrice");
+  const saleFreightPrice=n("saleFreightPrice");
+  let saleFreightAmount=n("saleFreightAmount");
+  const ex1v=parseInt(g("saleExMine1")), ex1i=isNaN(ex1v)?-1:ex1v;
+  const ex2v=parseInt(g("saleExMine2")), ex2i=isNaN(ex2v)?-1:ex2v;
+  const exW1=n("saleExW1"), exW2=n("saleExW2");
+  if(!saleDate || !saleNo || saleWeight<=0 || saleUnitPrice<=0){
+    alert("请完善销售日期、单号、重量、单价"); return;
+  }
+  // 校验出库矿点库存是否足够
+  const checkEx=(bi,w)=>{
+    if(bi<0) return true;
+    const b=purchaseList[bi];
+    const st=(b.stockRemain ?? b.settle)||0;
+    if(w>st){ alert(`出库矿点「${b.from||''}」库存不足（剩余 ${st.toFixed(2)} 吨）`); return false; }
+    return true;
+  };
+  if(!checkEx(ex1i,exW1) || !checkEx(ex2i,exW2)) return;
+  const stock = calcStock();
+  if(stock.stockRemainTon < saleWeight){
+    alert(`库存不足！当前库存结余：${stock.stockRemainTon.toFixed(2)}吨`); return;
+  }
+  // 扣减对应批次库存，记录批次来源
+  let ex1Name="", ex2Name="";
+  if(ex1i>=0 && exW1>0){ const b=purchaseList[ex1i]; ex1Name=b.from||""; b.stockRemain=Math.max(0, ((b.stockRemain??b.settle) - exW1)); }
+  if(ex2i>=0 && exW2>0){ const b=purchaseList[ex2i]; ex2Name=b.from||""; b.stockRemain=Math.max(0, ((b.stockRemain??b.settle) - exW2)); }
+  const saleTotalIncome = roundInt(n("saleSellPrice") * saleWeight);
+  const bU1=(ex1i>=0&&purchaseList[ex1i])?purchaseList[ex1i].tonCostAll:0;
+  const bU2=(ex2i>=0&&purchaseList[ex2i])?purchaseList[ex2i].tonCostAll:0;
+  const exA1=roundInt(exW1*bU1), exA2=roundInt(exW2*bU2);
+  const saleCostAmount = exA1+exA2;
+  saleFreightAmount = n("saleFreightAmount");
+  const saleTotalAmount = exA1+exA2+saleFreightAmount;
+  saleUnitPrice = saleWeight>0 ? (saleTotalAmount/saleWeight) : 0;
+  const saleCostUnit = stock.avgCostPrice;
+  const saleTotalCost = roundInt(saleWeight*saleCostUnit);
+  const saleProfit = roundInt(saleTotalIncome-saleTotalCost);
+  saleList.push({
+    saleDate, saleNo, buyCompany:g("buyCompany"),
+    saleExMine1:ex1Name, saleBatchIdx1:ex1i, saleExW1:exW1,
+    saleExMine2:ex2Name, saleBatchIdx2:ex2i, saleExW2:exW2,
+    saleWeight, saleUnitPrice, saleCostAmount, saleFreightPrice, saleFreightAmount, saleTotalAmount,
+    saleSellPrice:n("saleSellPrice"), saleArriveW:n("saleArriveW"), saleSellAmount:n("saleSellAmount"),
+    saleTotalIncome, saleCostUnit, saleTotalCost,
+    saleProfit, saleTonProfit: saleWeight>0 ? saleProfit/saleWeight : 0
+  });
+  saveAllData();
+  renderSaleTable();
+  fillExMineOptions();
+  ["saleDate","saleNo","buyCompany","saleExMine1","saleExW1","saleExAmount1","saleExMine2","saleExW2","saleExAmount2","saleWeight","saleUnitPrice","saleCostAmount","saleFreightPrice","saleFreightAmount","saleTotalAmount","saleSellPrice","saleArriveW","saleSellAmount"].forEach(i=>document.getElementById(i).value="");
+  document.getElementById("saleExMine1").value="-1"; document.getElementById("saleExMine2").value="-1";
+  autofillCostUnitPrice();
+  alert("销售出库成功！库存已扣减");
+}
+function renderSaleTable(){
+  const tb=document.getElementById("saleTableBody");
+  tb.innerHTML="";
+  saleList.forEach((r,i)=>{
+    tb.innerHTML += `<tr>
+      <td>${r.saleDate}</td><td>${r.saleNo}</td><td>${r.buyCompany}</td><td>${r.saleExMine1||""}</td><td>${r.saleExW1?r.saleExW1.toFixed(2):"0.00"}</td><td>${r.saleExMine2||""}</td><td>${r.saleExW2?r.saleExW2.toFixed(2):"0.00"}</td>
+      <td>${r.saleWeight.toFixed(2)}</td><td>${r.saleFreightPrice?(r.saleFreightPrice.toFixed(2)):'0.00'}</td><td>${r.saleFreightAmount?r.saleFreightAmount:0}</td>
+      <td>${r.saleUnitPrice.toFixed(2)}</td>
+      <td>${r.saleCostAmount||0}</td>
+      <td>${r.saleTotalAmount||0}</td>
+      <td>${r.saleSellPrice?(r.saleSellPrice.toFixed(2)):"0.00"}</td><td>${r.saleArriveW?(r.saleArriveW.toFixed(2)):"0.00"}</td><td>${r.saleSellAmount||0}</td>
+      <td>${r.saleTotalIncome}</td>
+      <td class="${r.saleProfit>=0?'text-green-600':'text-red-600'}">${r.saleProfit}</td>
+      <td class="${r.saleTonProfit>=0?'text-green-600':'text-red-600'}">${r.saleTonProfit.toFixed(2)}</td>
+      <td>${canDelete() ? `<button onclick="delSale(${i})" class="px-2 py-1 bg-red-400 text-white rounded">删除</button>` : ""}</td>
+    </tr>`;
+  });
+}
+// 出库矿点下拉 = 库存批次（有剩余库存的来源矿点）
+function fillExMineOptions(){
+  ["saleExMine1","saleExMine2"].forEach(selId=>{
+    const sel=document.getElementById(selId); if(!sel) return;
+    const keep = sel.value || "-1";
+    sel.innerHTML = `<option value="-1">请选择库存批次</option>`;
+    purchaseList.forEach((p,i)=>{
+      const st=(p.stockRemain ?? p.settle)||0;
+      if(st>0.001) sel.innerHTML += `<option value="${i}">${p.from||""}（库存 ${st.toFixed(2)} 吨）</option>`;
+    });
+    if(sel.querySelector(`option[value="${keep}"]`)) sel.value=keep;
+  });
+}
+function delSale(idx){
+  if(!confirm("确认删除？库存将恢复")) return;
+  const r=saleList[idx];
+  if(r){
+    if(r.saleBatchIdx1>=0 && r.saleExW1){ const b=purchaseList[r.saleBatchIdx1]; if(b) b.stockRemain=((b.stockRemain??b.settle)+r.saleExW1); }
+    if(r.saleBatchIdx2>=0 && r.saleExW2){ const b=purchaseList[r.saleBatchIdx2]; if(b) b.stockRemain=((b.stockRemain??b.settle)+r.saleExW2); }
+  }
+  saleList.splice(idx,1);
+  saveAllData();
+  renderSaleTable();
+  fillExMineOptions();
+}
+loadAllData();
+initPage("sale.html");
+if(!canEdit("sale")){
+  const w = document.getElementById("saleFormWrap");
+  if(w) w.innerHTML = `<div class="text-sm text-gray-500 p-2">当前账号为只读权限，仅可查看，不可新增。</div>`;
+}
+renderSaleTable();
+fillExMineOptions();
+autofillCostUnitPrice();
+onCloudReady(function(){ renderSaleTable(); fillExMineOptions(); autofillCostUnitPrice(); }); // 云端同步后重渲染
+</script>
+</body>
+</html>
