@@ -161,14 +161,19 @@ function requireLogin(){
   if(!u) { location.href = "login.html"; return null; }
   return u;
 }
-// 当前场地：管理员可自由切换（coalViewSite 覆盖），普通人员固定在自己登录的煤场
+// 当前场地：管理员自由切换4场；普通用户只能在被管理员开放的煤场（sites）中切换，默认自己的煤场
 function currentSite(){
   const u = currentUser();
   const valid=["西华煤场","禹州煤场","告成煤场","叶县煤场"];
   const own = (u && u.site && valid.indexOf(u.site)>=0) ? u.site : "西华煤场";
-  if(u && u.role!=="admin") return own;
+  if(!u) return own;
   const ov = localStorage.getItem("coalViewSite");
-  return (ov && valid.indexOf(ov)>=0) ? ov : own;
+  if(u.role==="admin"){
+    return (ov && valid.indexOf(ov)>=0) ? ov : own;
+  }
+  const allowed = Array.isArray(u.sites) ? u.sites.filter(s=>valid.indexOf(s)>=0) : [own];
+  if(allowed.indexOf(own)<0) allowed.unshift(own);
+  return (ov && allowed.indexOf(ov)>=0) ? ov : own;
 }
 
 // 登出
@@ -185,17 +190,20 @@ function renderUserBar(){
   if(!bar) return;
   const sites = ["西华煤场","禹州煤场","告成煤场","叶县煤场"];
   const curSite = currentSite();
+  const allowed = user.role==="admin"
+    ? sites
+    : (Array.isArray(user.sites)&&user.sites.length ? user.sites.filter(s=>sites.indexOf(s)>=0) : [user.site||"西华煤场"]);
   bar.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <select id="siteSwitcher" onchange="switchSite(this.value)" style="padding:5px 10px;border-radius:999px;background:#fff7e0;border:1px solid #e8c55c;color:#a67c00;font-size:13px;font-weight:600;cursor:pointer">
-        ${sites.map(s=>`<option value="${s}" ${s===curSite?"selected":""} ${(user.role!=="admin" && s!==user.site)?"disabled":""}>🏭 ${s}</option>`).join("")}
+        ${sites.map(s=>`<option value="${s}" ${s===curSite?"selected":""} ${allowed.indexOf(s)<0?"disabled":""}>🏭 ${s}</option>`).join("")}
       </select>
       <span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#4a3a15;font-weight:600">${user.role==="admin"?"👑":"👤"} ${user.name||user.username}<span style="color:#b09a60;font-size:12px;font-weight:400">${user.role==="admin"?"管理员":"普通用户"}</span></span>
       ${user.role==="admin" ? `<a href="users.html" style="padding:6px 12px;border-radius:8px;background:#f7e7bd;color:#a67c00;font-size:13px;text-decoration:none;font-weight:600">用户管理</a>` : ""}
       <button onclick="logout()" style="padding:6px 14px;border-radius:8px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">退出</button>
     </div>`;
 }
-// 切换当前查看煤场（管理员可自由切换，普通人员锁定自己煤场）
+// 切换当前查看煤场（普通用户仅能在被管理员开放的煤场间切换，管理员自由切4场）
 function switchSite(site){
   if(!site) return;
   localStorage.setItem("coalViewSite", site);
