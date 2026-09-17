@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>登录 - 煤炭进销存</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+<div class="bg-white rounded shadow-lg p-8 w-full max-w-sm">
+  <h1 class="text-2xl font-bold text-center mb-6">煤炭进销存管理系统</h1>
+  <div class="mb-4">
+    <label class="text-sm">用户名</label>
+    <input type="text" id="username" class="border p-2 w-full mt-1" placeholder="请输入用户名">
+  </div>
+  <div class="mb-4">
+    <label class="text-sm">密码</label>
+    <input type="password" id="password" class="border p-2 w-full mt-1" placeholder="请输入密码">
+  </div>
+  <button onclick="doLogin()" class="w-full py-2 bg-blue-600 text-white rounded">登 录</button>
+  <p class="text-center text-sm text-gray-500 mt-4">默认管理员：丁浩伦 / 123456</p>
+  <p id="msg" class="text-center text-sm text-red-500 mt-2"></p>
+</div>
+<script src="data.js"></script>
+<script>
+function doLogin(){
+  const u = document.getElementById("username").value.trim();
+  const p = document.getElementById("password").value;
+  if(!u || !p){ document.getElementById("msg").textContent="请输入用户名和密码"; return; }
+  const finish = function(users){
+    const found = users.find(x => x.username===u && x.password===p);
+    if(!found){ document.getElementById("msg").textContent="用户名或密码错误"; return; }
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ username:found.username, name:found.name, role:found.role, site:found.site||"西华煤场" }));
+    cloudPushUsers(users); // 登录成功，把当前用户表同步到云端
+    location.href = "index.html";
+  };
+  const local = loadUsers();
+  if(local.find(x => x.username===u && x.password===p)){ finish(local); return; }
+  // 本地无此用户：从云端拉取用户表再匹配
+  cloudPullUsers().then(function(cu){
+    if(cu && cu.length){ saveUsers(cu); finish(cu); }
+    else { document.getElementById("msg").textContent="用户名或密码错误"; }
+  });
+}
+</script>
+</body>
+</html>
