@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>财务管理 - 煤炭进销存</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-4 bg-gray-100">
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-xl font-bold">财务管理</h1>
+  <div id="userbar"></div>
+</div>
+<div id="nav" class="mb-4"></div>
+
+<div class="p-4 border rounded bg-gray-50">
+  <h3 class="text-lg font-bold mb-3">💰 财务汇总</h3>
+  <div id="finSummary" class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4"></div>
+</div>
+
+<div class="p-4 border rounded bg-gray-50 mt-4">
+  <h3 class="text-lg font-bold mb-3">📋 批次结算对账明细</h3>
+  <div class="border p-3 rounded bg-white overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead><tr>
+        <th>来源矿点</th><th>日期</th><th>煤款应/已/欠</th><th>运费应/已/欠</th><th>居间应/已/欠</th><th>税额</th>
+      </tr></thead>
+      <tbody id="finTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+function renderFinance(){
+  const fin = calcFinance();
+  document.getElementById("finSummary").innerHTML = `
+    <div class="border p-2 rounded bg-white">💵 煤款：应付${fin.coalNeed}，已付${fin.coalPaid}，<b>欠款${fin.coalArrears}</b> 元</div>
+    <div class="border p-2 rounded bg-white">🚚 运费：应付${fin.freightNeed}，已付${fin.freightPaid}，<b>欠款${fin.freightArrears}</b> 元</div>
+    <div class="border p-2 rounded bg-white">🤝 居间：应付${fin.brokerNeed}，已付${fin.brokerPaid}，<b>欠款${fin.brokerArrears}</b> 元</div>
+    <div class="border p-2 rounded bg-white">🧾 累计进项税额：${fin.taxSum} 元</div>`;
+
+  const tb=document.getElementById("finTableBody");
+  tb.innerHTML="";
+  purchaseList.forEach(p=>{
+    tb.innerHTML += `<tr>
+      <td>${p.from||p.no}</td><td>${p.date}</td>
+      <td>${p.coalTotalMoney}/${p.coalPaidMoney||0}/${p.coalTotalMoney-(p.coalPaidMoney||0)}</td>
+      <td>${p.freightTotal}/${p.freightPaidMoney||0}/${p.freightTotal-(p.freightPaidMoney||0)}</td>
+      <td>${p.brokerAmount}/${p.brokerPaidMoney||0}/${p.brokerAmount-(p.brokerPaidMoney||0)}</td>
+      <td>${p.taxAmount||0}</td>
+    </tr>`;
+  });
+}
+loadAllData();
+initPage("finance.html");
+renderFinance();
+onCloudReady(renderFinance); // 云端数据同步后自动重渲染
+</script>
+</body>
+</html>
