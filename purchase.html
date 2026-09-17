@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>采购 - 煤炭进销存</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  .inp{ width:100%; border:1px solid #d1d5db; border-radius:8px; padding:6px 10px; font-size:14px; background:#fff; transition:all .15s; }
+  .inp:focus{ outline:none; border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.15); }
+  .lbl{ display:block; font-size:13px; font-weight:500; color:#475569; margin-bottom:3px; }
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-blue-50 p-4">
+<div class="flex justify-between items-center mb-4">
+  <div class="flex items-center gap-2">
+    <div class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow">🛒</div>
+    <h1 class="text-2xl font-bold text-slate-800">采购</h1>
+  </div>
+  <div id="userbar"></div>
+</div>
+<div id="nav" class="mb-5"></div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mb-4" id="purchaseFormWrap">
+  <div class="flex items-center gap-2 mb-4">
+    <div class="w-1.5 h-6 rounded bg-blue-600"></div>
+    <h3 class="text-lg font-bold text-slate-800" id="purchaseFormTitle">新增采购</h3>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+    <div><label class="lbl">日期</label><input type="date" id="purchaseDate" class="inp"></div>
+    <div><label class="lbl">来源矿点</label><input type="text" id="purchaseFrom" class="inp"></div>
+    <div><label class="lbl">收货煤场</label><input type="text" id="purchaseTo" class="inp"></div>
+    <div><label class="lbl">收货人</label><input type="text" id="receiver" class="inp"></div>
+    <div><label class="lbl">矿发重量(吨)</label><input type="number" step="0.01" id="origTon" class="inp"></div>
+    <div><label class="lbl">厂收重量(吨)</label><input type="number" step="0.01" id="settleTon" class="inp" oninput="updateTotalAmount()"></div>
+    <div><label class="lbl">全水Mt(%)</label><input type="number" step="0.01" id="totalWater" class="inp"></div>
+    <div><label class="lbl">全硫St(%)</label><input type="number" step="0.01" id="sulfur" class="inp"></div>
+    <div><label class="lbl">收到基挥发</label><input type="number" step="0.01" id="arVola" class="inp"></div>
+    <div><label class="lbl">空干基挥发</label><input type="number" step="0.01" id="adVola" class="inp"></div>
+    <div><label class="lbl">灰份</label><input type="number" step="0.01" id="ash" class="inp"></div>
+    <div><label class="lbl">热值</label><input type="number" step="1" id="heat" class="inp"></div>
+    <div><label class="lbl">煤单价(元/吨)</label><input type="number" step="0.01" id="coalUnitPrice" class="inp" oninput="updateTotalAmount()"></div>
+    <div><label class="lbl">运费合计(元)</label><input type="number" step="1" id="freightTotal" class="inp" oninput="updateTotalAmount()"></div>
+    <div><label class="lbl">居间费总额(元)</label><input type="number" step="1" id="brokerAmount" class="inp" oninput="updateTotalAmount()"></div>
+    <div><label class="lbl">总金额(元)</label><input type="text" id="totalAmount" class="inp bg-slate-100 text-slate-800 font-semibold" readonly></div>
+  </div>
+
+  <!-- 财务结算信息：四个分组卡片 -->
+  <div class="flex items-center gap-2 mb-3">
+    <div class="w-1.5 h-6 rounded bg-amber-500"></div>
+    <h3 class="text-lg font-bold text-slate-800">财务结算信息</h3>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+    <div class="bg-blue-50/70 rounded-xl border border-blue-100 p-3">
+      <div class="font-bold text-blue-700 mb-2">💵 煤款结算</div>
+      <div class="mb-2"><label class="lbl">已付金额</label><input type="number" step="1" id="coalPaidMoney" class="inp"></div>
+      <div class="mb-2"><label class="lbl">状态</label>
+        <select id="coalPayStatus" class="inp">
+          <option value="未付款">未付款</option><option value="部分付款">部分付款</option><option value="已付清">已付清</option>
+        </select></div>
+      <div><label class="lbl">备注</label><input type="text" id="coalPayRemark" class="inp"></div>
+    </div>
+    <div class="bg-emerald-50/70 rounded-xl border border-emerald-100 p-3">
+      <div class="font-bold text-emerald-700 mb-2">🚚 运费结算</div>
+      <div class="mb-2"><label class="lbl">已付金额</label><input type="number" step="1" id="freightPaidMoney" class="inp"></div>
+      <div class="mb-2"><label class="lbl">状态</label>
+        <select id="freightSettleStatus" class="inp">
+          <option value="未结算">未结算</option><option value="部分结算">部分结算</option><option value="已结清">已结清</option>
+        </select></div>
+      <div><label class="lbl">备注</label><input type="text" id="freightRemark" class="inp"></div>
+    </div>
+    <div class="bg-orange-50/70 rounded-xl border border-orange-100 p-3">
+      <div class="font-bold text-orange-700 mb-2">🤝 居间结算</div>
+      <div class="mb-2"><label class="lbl">已付金额</label><input type="number" step="1" id="brokerPaidMoney" class="inp"></div>
+      <div class="mb-2"><label class="lbl">状态</label>
+        <select id="brokerSettleStatus" class="inp">
+          <option value="未结算">未结算</option><option value="部分结算">部分结算</option><option value="已结清">已结清</option>
+        </select></div>
+      <div><label class="lbl">备注</label><input type="text" id="brokerPayRemark" class="inp"></div>
+    </div>
+    <div class="bg-violet-50/70 rounded-xl border border-violet-100 p-3">
+      <div class="font-bold text-violet-700 mb-2">🧾 税务发票</div>
+      <div class="mb-2"><label class="lbl">发票税额(元)</label><input type="number" step="1" id="taxAmount" class="inp"></div>
+      <div class="mb-2"><label class="lbl">状态</label>
+        <select id="taxInvoiceStatus" class="inp">
+          <option value="未开票">未开票</option><option value="部分开票">部分开票</option><option value="已收票">已收票</option>
+        </select></div>
+      <div><label class="lbl">备注</label><input type="text" id="taxRemark" class="inp"></div>
+    </div>
+  </div>
+
+  <div class="flex items-center gap-2">
+    <button id="addPurchaseBtn" onclick="addPurchase()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow transition">新增采购</button>
+    <button id="cancelEditBtn" onclick="cancelEdit()" class="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg font-medium hidden transition">取消修改</button>
+  </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+  <div class="flex items-center gap-2 mb-4">
+    <div class="w-1.5 h-6 rounded bg-blue-600"></div>
+    <h3 class="text-lg font-bold text-slate-800">采购记录</h3>
+  </div>
+  <div class="border border-slate-200 rounded-xl overflow-x-auto">
+    <table class="w-full text-sm" style="table-layout:fixed">
+      <colgroup>
+        <col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:4%"><col style="width:4%"><col style="width:4%"><col style="width:4%"><col style="width:6%"><col style="width:8%">
+        <col style="width:6%"><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:4%"><col style="width:4%">
+      </colgroup>
+      <thead><tr class="bg-slate-100 text-slate-700">
+        <th class="px-2 py-2.5 text-left font-semibold">日期</th><th class="px-2 py-2.5 text-left font-semibold">来源</th>
+        <th class="px-2 py-2.5 text-right font-semibold">矿发吨</th><th class="px-2 py-2.5 text-right font-semibold">厂收吨</th><th class="px-2 py-2.5 text-right font-semibold">水</th><th class="px-2 py-2.5 text-right font-semibold">硫</th><th class="px-2 py-2.5 text-right font-semibold">挥发</th><th class="px-2 py-2.5 text-right font-semibold">灰份</th><th class="px-2 py-2.5 text-right font-semibold">热值</th><th class="px-2 py-2.5 text-right font-semibold">总成本</th><th class="px-2 py-2.5 text-right font-semibold">单价</th>
+        <th class="px-2 py-2.5 text-center font-semibold">煤款付款</th><th class="px-2 py-2.5 text-center font-semibold">运费结算</th><th class="px-2 py-2.5 text-center font-semibold">居间结算</th><th class="px-2 py-2.5 text-center font-semibold">税务发票</th><th class="px-2 py-2.5 text-left font-semibold">收货人</th><th class="px-2 py-2.5 text-center font-semibold">操作</th>
+      </tr></thead>
+      <tbody id="purchaseTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+let editIndex = -1;
+// 总金额自动计算 = 煤款(矿发×单价) + 运费 + 居间费
+function updateTotalAmount(){
+  const n = id => parseFloat(document.getElementById(id).value) || 0;
+  const coalMoney = roundInt(n("origTon") * n("coalUnitPrice"));
+  const total = roundInt(coalMoney + n("freightTotal") + n("brokerAmount"));
+  const el = document.getElementById("totalAmount");
+  if(el) el.value = total ? total : "";
+}
+function resetForm(){
+  editIndex = -1;
+  ["purchaseFrom","purchaseTo","receiver","origTon","settleTon",
+   "totalWater","sulfur","adVola","ash","arVola","heat","coalUnitPrice","freightTotal","brokerAmount","totalAmount",
+   "coalPaidMoney","coalPayRemark","freightPaidMoney","freightRemark","taxAmount","taxRemark",
+   "brokerPaidMoney","brokerPayRemark"].forEach(i=>document.getElementById(i).value="");
+  document.getElementById("purchaseDate").value="";
+  document.getElementById("purchaseFormTitle").textContent="新增采购";
+  document.getElementById("addPurchaseBtn").textContent="新增采购";
+  document.getElementById("cancelEditBtn").classList.add("hidden");
+}
+function cancelEdit(){ resetForm(); }
+function editPurchase(idx){
+  const p = purchaseList[idx];
+  if(!p) return;
+  editIndex = idx;
+  const setV=(id,v)=>{ const el=document.getElementById(id); if(el) el.value=(v===undefined||v===null)?"":v; };
+  setV("purchaseDate",p.date); setV("purchaseFrom",p.from); setV("purchaseTo",p.to); setV("receiver",p.receiver);
+  setV("origTon",p.orig); setV("settleTon",p.settle);
+  setV("totalWater",p.totalWater); setV("sulfur",p.sulfur); setV("adVola",p.adVola); setV("ash",p.ash); setV("arVola",p.arVola);
+  setV("heat",p.heat); setV("coalUnitPrice",p.coalUnitPrice); setV("freightTotal",p.freightTotal); setV("brokerAmount",p.brokerAmount);
+  setV("coalPayStatus",p.coalPayStatus); setV("coalPaidMoney",p.coalPaidMoney); setV("coalPayRemark",p.coalPayRemark);
+  setV("freightSettleStatus",p.freightSettleStatus); setV("freightPaidMoney",p.freightPaidMoney); setV("freightRemark",p.freightRemark);
+  setV("brokerSettleStatus",p.brokerSettleStatus); setV("brokerPaidMoney",p.brokerPaidMoney); setV("brokerPayRemark",p.brokerPayRemark);
+  setV("taxInvoiceStatus",p.taxInvoiceStatus); setV("taxAmount",p.taxAmount); setV("taxRemark",p.taxRemark);
+  document.getElementById("purchaseFormTitle").textContent="修改采购（"+(p.date||"")+" "+(p.from||"")+"）";
+  document.getElementById("addPurchaseBtn").textContent="保存修改";
+  document.getElementById("cancelEditBtn").classList.remove("hidden");
+  updateTotalAmount();
+  const w = document.getElementById("purchaseFormWrap");
+  if(w) w.scrollIntoView({behavior:"smooth", block:"start"});
+}
+function addPurchase(){
+  const g = id => document.getElementById(id).value;
+  const n = id => parseFloat(g(id)) || 0;
+  const purchaseDate=g("purchaseDate");
+  const settle = n("settleTon");
+  if(!purchaseDate || settle <= 0){ alert("日期、厂收重量不能为空且大于0"); return; }
+  const coalUnitPrice=n("coalUnitPrice");
+  const coalTotalMoney = roundInt(n("origTon")*coalUnitPrice);
+  const freightTotal = roundInt(n("freightTotal"));
+  const brokerAmount = roundInt(n("brokerAmount"));
+  const totalCostAll = roundInt(coalTotalMoney+freightTotal+brokerAmount);
+  const obj = {
+    date:purchaseDate, no: (editIndex>=0 && purchaseList[editIndex]) ? purchaseList[editIndex].no : "P"+Date.now(), from:g("purchaseFrom"), to:g("purchaseTo"), receiver:g("receiver"),
+    orig:n("origTon"), settle, stockRemain: (editIndex>=0 && purchaseList[editIndex]) ? (purchaseList[editIndex].stockRemain ?? purchaseList[editIndex].settle) : settle, diff:n("origTon")-settle,
+    totalWater:n("totalWater"), sulfur:n("sulfur"), adVola:n("adVola"), ash:n("ash"), arVola:n("arVola"),
+    heat:roundInt(n("heat")), coalUnitPrice, coalTotalMoney, freightTotal, brokerAmount,
+    totalCostAll, tonCostAll: settle>0 ? totalCostAll/settle : 0,
+    coalPayStatus:g("coalPayStatus"), coalPaidMoney:roundInt(n("coalPaidMoney")), coalPayRemark:g("coalPayRemark"),
+    freightSettleStatus:g("freightSettleStatus"), freightPaidMoney:roundInt(n("freightPaidMoney")), freightRemark:g("freightRemark"),
+    taxInvoiceStatus:g("taxInvoiceStatus"), taxAmount:roundInt(n("taxAmount")), taxRemark:g("taxRemark"),
+    brokerSettleStatus:g("brokerSettleStatus"), brokerPaidMoney:roundInt(n("brokerPaidMoney")), brokerPayRemark:g("brokerPayRemark")
+  };
+  if(editIndex >= 0){
+    const wasMix = ((purchaseList[editIndex].no||"").indexOf("MIX-")===0);
+    purchaseList[editIndex] = obj;
+    // 修改原料采购批次后，追溯重算使用该原料的配煤成品成本/单价
+    if(!wasMix) recalcMixCosts();
+    saveAllData();
+    renderPurchase();
+    resetForm();
+    alert("采购修改成功");
+  } else {
+    purchaseList.push(obj);
+    saveAllData();
+    renderPurchase();
+    resetForm();
+    alert("采购新增成功");
+  }
+}
+// 状态彩色标签
+function statusBadge(status, money){
+  let cls = "bg-gray-100 text-gray-600";
+  if(status==="已付清"||status==="已结清"||status==="已收票") cls = "bg-green-100 text-green-700";
+  else if(status==="部分付款"||status==="部分结算"||status==="部分开票") cls = "bg-amber-100 text-amber-700";
+  else if(status==="未付款"||status==="未结算"||status==="未开票") cls = "bg-red-100 text-red-600";
+  return `<span class="inline-block px-2 py-0.5 rounded-full text-xs font-medium ${cls}">${status}</span><span class="block text-xs text-slate-500 mt-0.5">${money}元</span>`;
+}
+function renderPurchase(){
+  const tb = document.getElementById("purchaseTableBody");
+  tb.innerHTML="";
+  // 汇总累加器
+  let sOrig=0, sSettle=0, sHeatW=0, sCost=0, sWaterW=0, sSulfurW=0, sVolaW=0, sAshW=0;
+  let sCoalN=0,sCoalP=0, sFreqN=0,sFreqP=0, sBrokN=0,sBrokP=0, sTax=0;
+  purchaseList.forEach((p,i)=>{
+    sOrig+=p.orig||0; sSettle+=p.settle||0; sHeatW+=(p.heat||0)*(p.settle||0); sCost+=p.totalCostAll||0;
+    sWaterW+=(p.totalWater||0)*(p.settle||0); sSulfurW+=(p.sulfur||0)*(p.settle||0); sVolaW+=(p.arVola||0)*(p.settle||0); sAshW+=(p.ash||0)*(p.settle||0);
+    sCoalN+=p.coalTotalMoney||0; sCoalP+=p.coalPaidMoney||0;
+    sFreqN+=p.freightTotal||0; sFreqP+=p.freightPaidMoney||0;
+    sBrokN+=p.brokerAmount||0; sBrokP+=p.brokerPaidMoney||0;
+    sTax+=p.taxAmount||0;
+    tb.innerHTML += `<tr class="border-t border-slate-100 odd:bg-white even:bg-slate-50/50 hover:bg-blue-50/40">
+      <td class="px-2 py-2.5">${p.date}</td><td class="px-2 py-2.5">${p.from||""}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${p.orig.toFixed(2)}</td><td class="px-2 py-2.5 text-right tabular-nums">${p.settle.toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${(p.totalWater||0).toFixed(2)}</td><td class="px-2 py-2.5 text-right tabular-nums">${(p.sulfur||0).toFixed(2)}</td><td class="px-2 py-2.5 text-right tabular-nums">${(p.arVola||0).toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${(p.ash||0).toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${p.heat}</td><td class="px-2 py-2.5 text-right tabular-nums font-medium">${p.totalCostAll}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${p.settle>0 ? (p.totalCostAll/p.settle).toFixed(2) : "0.00"}</td>
+      <td class="px-2 py-2.5 text-center">${statusBadge(p.coalPayStatus, p.coalPaidMoney||0)}</td>
+      <td class="px-2 py-2.5 text-center">${statusBadge(p.freightSettleStatus, p.freightPaidMoney||0)}</td>
+      <td class="px-2 py-2.5 text-center">${statusBadge(p.brokerSettleStatus, p.brokerPaidMoney||0)}</td>
+      <td class="px-2 py-2.5 text-center">${statusBadge(p.taxInvoiceStatus, "税"+((p.taxAmount||0)))}</td>
+      <td class="px-2 py-2.5">${p.receiver||""}</td>
+      <td class="px-2 py-2.5 text-center whitespace-nowrap">${canEdit("purchase") ? `<button onclick="editPurchase(${i})" class="px-2 py-1 rounded-md bg-amber-500 text-white text-xs hover:bg-amber-600 transition">修改</button>` : ""} ${canDelete() ? `<button onclick="delPurchase(${i})" class="px-2 py-1 rounded-md bg-red-500 text-white text-xs hover:bg-red-600 transition">删除</button>` : ""}</td>
+    </tr>`;
+  });
+  // 汇总行
+  if(purchaseList.length){
+    const avgHeat = sSettle>0 ? roundInt(sHeatW/sSettle) : 0;
+    const avgWater = sSettle>0 ? (sWaterW/sSettle).toFixed(2) : "0.00";
+    const avgSulfur = sSettle>0 ? (sSulfurW/sSettle).toFixed(2) : "0.00";
+    const avgVola = sSettle>0 ? (sVolaW/sSettle).toFixed(2) : "0.00";
+    const avgAsh = sSettle>0 ? (sAshW/sSettle).toFixed(2) : "0.00";
+    tb.innerHTML += `<tr class="bg-slate-200 font-semibold border-t-2 border-slate-400">
+      <td class="px-2 py-2.5" colspan="2">【汇总】</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${sOrig.toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${sSettle.toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${avgWater}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${avgSulfur}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${avgVola}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${avgAsh}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${avgHeat}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${roundInt(sCost)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${sSettle>0 ? (sCost/sSettle).toFixed(2) : "0.00"}</td>
+      <td class="px-2 py-2.5 text-center">应付${roundInt(sCoalN)} 已付${roundInt(sCoalP)}</td>
+      <td class="px-2 py-2.5 text-center">应付${roundInt(sFreqN)} 已付${roundInt(sFreqP)}</td>
+      <td class="px-2 py-2.5 text-center">应付${roundInt(sBrokN)} 已付${roundInt(sBrokP)}</td>
+      <td class="px-2 py-2.5 text-center">税${roundInt(sTax)}</td>
+      <td class="px-2 py-2.5"></td>
+      <td class="px-2 py-2.5"></td>
+    </tr>`;
+  }
+}
+function delPurchase(idx){
+  if(!confirm("确认删除？")) return;
+  purchaseList.splice(idx,1);
+  saveAllData();
+  renderPurchase();
+}
+loadAllData();
+initPage("purchase.html");
+// 只读用户隐藏新增表单
+if(!canEdit("purchase")){
+  const w = document.getElementById("purchaseFormWrap");
+  if(w) w.innerHTML = `<div class="text-sm text-gray-500 p-2">当前账号为只读权限，仅可查看，不可新增。</div>`;
+}
+renderPurchase();
+onCloudReady(renderPurchase); // 云端数据同步后自动重渲染
+</script>
+</body>
+</html>
