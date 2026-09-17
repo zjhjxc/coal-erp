@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>总览看板 - 煤炭进销存</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-blue-50 p-4">
+<div class="flex justify-between items-center mb-4">
+  <div class="flex items-center gap-2">
+    <div class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow">📊</div>
+    <h1 class="text-2xl font-bold text-slate-800">煤炭进销存管理系统</h1>
+  </div>
+  <div id="userbar"></div>
+</div>
+<div id="nav" class="mb-5"></div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5">
+  <div class="flex items-center gap-2 mb-4">
+    <div class="w-1.5 h-6 rounded bg-blue-600"></div>
+    <h3 class="text-lg font-bold text-slate-800">库存 & 财务总览</h3>
+  </div>
+  <div id="boardHtml"></div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-4">
+  <div class="flex items-center gap-2 mb-4">
+    <div class="w-1.5 h-6 rounded bg-emerald-600"></div>
+    <h3 class="text-lg font-bold text-slate-800">📦 库存明细（按来源）</h3>
+  </div>
+  <div class="border border-slate-200 rounded-xl overflow-x-auto">
+    <table class="w-full text-sm" style="table-layout:fixed">
+      <colgroup>
+        <col style="width:28%"><col style="width:24%"><col style="width:24%"><col style="width:24%">
+      </colgroup>
+      <thead><tr class="bg-slate-100 text-slate-700">
+        <th class="px-3 py-2.5 text-left font-semibold">来源</th>
+        <th class="px-3 py-2.5 text-right font-semibold">入库吨</th>
+        <th class="px-3 py-2.5 text-right font-semibold">入库成本(元)</th>
+        <th class="px-3 py-2.5 text-right font-semibold">占比</th>
+      </tr></thead>
+      <tbody id="stockDetailBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 mt-4">
+  <div class="flex items-center gap-2 mb-4">
+    <div class="w-1.5 h-6 rounded bg-amber-500"></div>
+    <h3 class="text-lg font-bold text-slate-800">💰 财务结算核对（按批次）</h3>
+  </div>
+  <p class="text-sm text-slate-500 mb-2">供财务人员逐笔核对煤款、运费、税务、居间的结算状态与金额。</p>
+  <div class="border border-slate-200 rounded-xl overflow-x-auto">
+    <table class="w-full text-sm" style="table-layout:fixed">
+      <colgroup>
+        <col style="width:9%"><col style="width:9%">
+        <col style="width:17%"><col style="width:17%"><col style="width:17%"><col style="width:13%"><col style="width:18%">
+      </colgroup>
+      <thead><tr class="bg-slate-100 text-slate-700">
+        <th class="px-2 py-2.5 text-left font-semibold">日期</th><th class="px-2 py-2.5 text-left font-semibold">来源矿点</th>
+        <th class="px-2 py-2.5 text-left font-semibold">煤款结算</th><th class="px-2 py-2.5 text-left font-semibold">运费结算</th><th class="px-2 py-2.5 text-left font-semibold">居间结算</th><th class="px-2 py-2.5 text-right font-semibold">总金额</th><th class="px-2 py-2.5 text-left font-semibold">税务发票</th>
+      </tr></thead>
+      <tbody id="finCheckBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+// 财务结算单格：状态 / 金额 / 备注
+function finCell(status, needMoney, paidMoney, remark){
+  let s = status || "-";
+  let money = "";
+  if(needMoney !== undefined && needMoney !== null){
+    money = `应付${roundInt(needMoney)} 已付${roundInt(paidMoney||0)} 欠${roundInt(needMoney-(paidMoney||0))}`;
+  }
+  let r = remark ? `备注：${remark}` : "";
+  let color = "";
+  if(s === "已付清" || s === "已结清" || s === "已收票") color = "color:#16a34a";
+  else if(s === "部分付款" || s === "部分结算" || s === "部分开票") color = "color:#d97706";
+  else if(s === "未付款" || s === "未结算" || s === "未开票") color = "color:#dc2626";
+  return `<div style="${color};font-weight:600">${s}</div><div>${money}</div><div class="text-gray-500 text-xs">${r}</div>`;
+}
+// 库存明细（按来源汇总入库）
+function renderStockDetail(){
+  const sd = document.getElementById("stockDetailBody");
+  const stock = calcStock();
+  const map = {};
+  purchaseList.forEach(p=>{
+    const k = p.from || "(无来源)";
+    if(!map[k]) map[k] = { ton:0, cost:0 };
+    map[k].ton += p.settle;
+    map[k].cost += p.totalCostAll;
+  });
+  sd.innerHTML="";
+  if(!Object.keys(map).length){
+    sd.innerHTML = `<tr><td colspan="4" class="text-center text-gray-400 py-4">暂无库存数据</td></tr>`;
+    return;
+  }
+  const totalTon = stock.totalInTon || 1;
+  let rows = "";
+  Object.keys(map).forEach(k=>{
+    const item = map[k];
+    const pct = (item.ton / totalTon * 100).toFixed(1);
+    rows += `<tr class="border-t border-slate-100 odd:bg-white even:bg-slate-50/50">
+      <td class="px-3 py-2.5">${k}</td>
+      <td class="px-3 py-2.5 text-right tabular-nums">${item.ton.toFixed(2)}</td>
+      <td class="px-3 py-2.5 text-right tabular-nums">${roundInt(item.cost)}</td>
+      <td class="px-3 py-2.5 text-right tabular-nums">${pct}%</td>
+    </tr>`;
+  });
+  // 合计行
+  rows += `<tr class="bg-slate-100 font-semibold">
+    <td class="px-3 py-2.5">合计 / 当前结余</td>
+    <td class="px-3 py-2.5 text-right tabular-nums">${stock.totalInTon.toFixed(2)} 吨（结余 ${stock.stockRemainTon.toFixed(2)}）</td>
+    <td class="px-3 py-2.5 text-right tabular-nums">${roundInt(stock.totalInMoney)} 元</td>
+    <td class="px-3 py-2.5 text-right tabular-nums">100%</td>
+  </tr>`;
+  sd.innerHTML = rows;
+}
+function renderBoard(){
+  const stock = calcStock();
+  const fin = calcFinance();
+  let saleIncome=0, saleCost=0, profit=0, saleTon=0;
+  // 配煤出入库统计
+  let mixInTon=0, mixInCost=0;
+  saleList.forEach(s=>{ saleIncome+=s.saleTotalIncome; saleCost+=s.saleTotalCost; profit+=s.saleProfit; saleTon+=s.saleWeight||0; });
+  purchaseList.forEach(p=>{ if((p.no||"").indexOf("MIX-")===0){ mixInTon+=p.settle; mixInCost+=p.totalCostAll; } });
+  const html = `
+  <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+    <div class="border border-slate-200 p-3 rounded-xl bg-white">期初库存：<b>${stockStartTon.toFixed(2)}</b>吨，金额${stockStartMoney}元</div>
+    <div class="border border-slate-200 p-3 rounded-xl bg-white">累计入库：<b>${stock.totalInTon.toFixed(2)}</b>吨，成本${stock.totalInMoney}元</div>
+    <div class="border border-slate-200 p-3 rounded-xl bg-white">累计出库：<b>${stock.totalOutTon.toFixed(2)}</b>吨，金额${saleCost}元</div>
+    <div class="border border-slate-200 p-3 rounded-xl bg-white">当前库存：<b>${stock.stockRemainTon.toFixed(2)}</b>吨，金额${stock.stockRemainMoney}元</div>
+    <div class="border border-slate-200 p-3 rounded-xl bg-white">库存加权单价：${stock.avgCostPrice.toFixed(2)}元/吨</div>
+    <div class="border border-slate-200 p-3 rounded-xl bg-white">总销售收入：${saleIncome}元，总销售吨位：<b>${saleTon.toFixed(2)}</b>吨，总毛利：${profit}元</div>
+    <div class="border border-slate-200 p-3 rounded-xl bg-emerald-50">⚗️ 配煤入库：<b>${mixInTon.toFixed(2)}</b>吨，成本${roundInt(mixInCost)}元</div>
+    <div class="border border-slate-200 p-3 rounded-xl bg-yellow-50">💵煤款：应付${fin.coalNeed}，已付${fin.coalPaid}，欠款${fin.coalArrears}元</div>
+    <div class="border border-slate-200 p-3 rounded-xl bg-yellow-50">🚚运费：应付${fin.freightNeed}，已付${fin.freightPaid}，欠款${fin.freightArrears}元</div>
+    <div class="border border-slate-200 p-3 rounded-xl bg-yellow-50">🤝居间费：应付${fin.brokerNeed}，已付${fin.brokerPaid}，欠款${fin.brokerArrears}元</div>
+    <div class="border border-slate-200 p-3 rounded-xl bg-yellow-50">🧾累计进项税额：${fin.taxSum}元</div>
+  </div>`;
+  document.getElementById("boardHtml").innerHTML = html;
+
+  // 库存明细
+  renderStockDetail();
+
+  // 财务结算核对表（逐批次）
+  const fb=document.getElementById("finCheckBody");
+  fb.innerHTML="";
+  if(!purchaseList.length){
+    fb.innerHTML = `<tr><td colspan="7" class="text-center text-gray-400 py-4">暂无采购记录</td></tr>`;
+    return;
+  }
+  purchaseList.forEach(p=>{
+    fb.innerHTML += `<tr class="align-top border-t border-slate-100 odd:bg-white even:bg-slate-50/50">
+      <td class="px-2 py-2.5">${p.date||""}</td><td class="px-2 py-2.5">${p.from||p.no}</td>
+      <td class="px-2 py-2.5">${finCell(p.coalPayStatus, p.coalTotalMoney, p.coalPaidMoney, p.coalPayRemark)}</td>
+      <td class="px-2 py-2.5">${finCell(p.freightSettleStatus, p.freightTotal, p.freightPaidMoney, p.freightRemark)}</td>
+      <td class="px-2 py-2.5">${finCell(p.brokerSettleStatus, p.brokerAmount, p.brokerPaidMoney, p.brokerPayRemark)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums font-bold text-slate-800">${roundInt((p.coalTotalMoney||0)+(p.freightTotal||0)+(p.brokerAmount||0))}</td>
+      <td class="px-2 py-2.5">${finCell(p.taxInvoiceStatus, p.taxAmount, null, p.taxRemark)}</td>
+    </tr>`;
+  });
+}
+function clearAllData(){
+  if(!isAdmin()){ alert("仅管理员可清空数据"); return; }
+  if(!confirm("确定清空全部数据？操作不可恢复！")) return;
+  localStorage.removeItem(dataKey());
+  location.reload();
+}
+loadAllData();
+initPage("index.html");
+renderBoard();
+onCloudReady(renderBoard); // 云端数据同步到本页后自动重渲染
+</script>
+</body>
+</html>
