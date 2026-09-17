@@ -29,6 +29,31 @@
   </div>
 </div>
 
+<div class="p-4 border rounded bg-gray-50 mt-4">
+  <h3 class="text-lg font-bold mb-3">📤 销售记录</h3>
+  <div class="border p-3 rounded bg-white overflow-x-auto">
+    <table class="w-full text-sm" style="table-layout:fixed">
+      <colgroup>
+        <col style="width:11%"><col style="width:11%"><col style="width:12%">
+        <col style="width:11%"><col style="width:11%"><col style="width:11%">
+        <col style="width:11%"><col style="width:11%"><col style="width:11%">
+      </colgroup>
+      <thead><tr class="bg-slate-100">
+        <th class="px-2 py-2.5 text-left">日期</th>
+        <th class="px-2 py-2.5 text-left">出货煤场</th>
+        <th class="px-2 py-2.5 text-left">购货单位</th>
+        <th class="px-2 py-2.5 text-right">销售过磅吨</th>
+        <th class="px-2 py-2.5 text-right">销售金额</th>
+        <th class="px-2 py-2.5 text-right">成本金额</th>
+        <th class="px-2 py-2.5 text-right">运费金额</th>
+        <th class="px-2 py-2.5 text-right">总金额</th>
+        <th class="px-2 py-2.5 text-right">毛利</th>
+      </tr></thead>
+      <tbody id="finSaleBody"></tbody>
+    </table>
+  </div>
+</div>
+
 <script src="data.js"></script>
 <script>
 function renderFinance(){
@@ -50,6 +75,28 @@ function renderFinance(){
       <td>${p.taxAmount||0}</td>
     </tr>`;
   });
+
+  // 销售记录
+  const sb=document.getElementById("finSaleBody");
+  sb.innerHTML="";
+  if(!saleList.length){
+    sb.innerHTML = `<tr><td colspan="9" class="text-center text-gray-400 py-4">暂无销售记录</td></tr>`;
+  } else {
+    saleList.forEach(r=>{
+      const profit = r.saleProfit||0;
+      sb.innerHTML += `<tr class="border-t border-slate-100 odd:bg-white even:bg-slate-50/50">
+        <td class="px-2 py-2.5">${r.saleDate||""}</td>
+        <td class="px-2 py-2.5">${r.saleNo||""}</td>
+        <td class="px-2 py-2.5">${r.buyCompany||""}</td>
+        <td class="px-2 py-2.5 text-right tabular-nums">${(r.saleWeight||0).toFixed(2)}</td>
+        <td class="px-2 py-2.5 text-right tabular-nums font-semibold">${r.saleSellAmount||0}</td>
+        <td class="px-2 py-2.5 text-right tabular-nums">${r.saleCostAmount||0}</td>
+        <td class="px-2 py-2.5 text-right tabular-nums">${r.saleFreightAmount||0}</td>
+        <td class="px-2 py-2.5 text-right tabular-nums">${r.saleTotalAmount||0}</td>
+        <td class="px-2 py-2.5 text-right tabular-nums font-semibold" style="color:${profit>=0?"#16a34a":"#dc2626"}">${profit}</td>
+      </tr>`;
+    });
+  }
 }
 loadAllData();
 initPage("finance.html");
