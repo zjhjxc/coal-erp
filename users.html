@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>用户管理 - 煤炭进销存</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-4 bg-gray-100">
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-xl font-bold">用户管理</h1>
+  <div id="userbar"></div>
+</div>
+<div id="nav" class="mb-4"></div>
+
+<div class="p-4 border rounded bg-gray-50 mb-4">
+  <div class="flex items-center gap-2 mb-3">
+    <div class="w-1.5 h-6 rounded bg-blue-500"></div>
+    <h3 class="text-lg font-bold text-slate-800">新增用户</h3>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div><label class="block text-xs text-slate-500 mb-1">姓名</label><input id="nuName" class="w-full border rounded px-2 py-1.5"></div>
+    <div><label class="block text-xs text-slate-500 mb-1">用户名</label><input id="nuUser" class="w-full border rounded px-2 py-1.5"></div>
+    <div><label class="block text-xs text-slate-500 mb-1">密码</label><input id="nuPass" type="password" class="w-full border rounded px-2 py-1.5"></div>
+    <div><label class="block text-xs text-slate-500 mb-1">场地</label>
+      <select id="nuSite" class="w-full border rounded px-2 py-1.5"><option value="西华煤场">西华煤场</option><option value="禹州煤场">禹州煤场</option><option value="告成煤场">告成煤场</option><option value="叶县煤场">叶县煤场</option></select>
+    </div>
+  </div>
+  <div class="mt-3">
+    <label class="block text-xs text-slate-500 mb-1">默认权限（可稍后在列表点"设权限"调整）</label>
+    <div class="flex flex-wrap gap-3">
+      <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuPerm" value="purchase" checked>采购</label>
+      <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuPerm" value="inventory" checked>库存</label>
+      <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuPerm" value="mix" checked>配煤</label>
+      <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuPerm" value="sale" checked>销售</label>
+      <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuPerm" value="finance" checked>财务</label>
+      <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuPerm" value="export" checked>导出</label>
+    </div>
+  </div>
+  <button onclick="addUser()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">保存用户</button>
+</div>
+
+<div class="p-4 border rounded bg-gray-50">
+  <h3 class="text-lg font-bold mb-3">📋 用户列表</h3>
+  <div class="border p-3 rounded bg-white overflow-x-auto">
+    <table class="w-full text-sm" style="table-layout:fixed">
+      <colgroup>
+        <col style="width:10%"><col style="width:11%"><col style="width:10%"><col style="width:8%">
+        <col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%">
+        <col style="width:13%">
+      </colgroup>
+      <thead><tr>
+        <th>姓名</th><th>用户名</th><th>场地</th><th>角色</th>
+        <th>采购</th><th>库存</th><th>配煤</th><th>销售</th><th>财务</th><th>导出</th>
+        <th>操作</th>
+      </tr></thead>
+      <tbody id="userTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+if(!isAdmin()){ alert("仅管理员可访问"); location.href="index.html"; }
+initPage("users.html");
+
+// 权限级别
+const LV = { "":"无", read:"只读", edit:"可编辑" };
+
+function renderUsers(){
+  const tb=document.getElementById("userTableBody");
+  tb.innerHTML="";
+  const me=currentUser();
+  if(!me) return;
+  loadUsers().forEach((u,i)=>{
+    const roleTxt = u.role==="admin"?"管理员":"普通用户";
+    const editBtn = (u.username!==me.username && u.role!=="admin")
+      ? `<button onclick="editPerm(${i})" class="px-2 py-1 bg-blue-400 text-white rounded mr-1">设权限</button>`
+      : (u.role==="admin"?"<span class='text-gray-400 text-xs'>系统</span>":"");
+    const delBtn = u.username===me.username ? "<span class='text-gray-400'>当前</span>"
+      : (u.role==="admin" ? "<span class='text-gray-400'>内置</span>"
+        : `<button onclick="delUser(${i},'${u.username}')" class="px-2 py-1 bg-red-400 text-white rounded">删除</button>`);
+    // 权限拆成独立单元格，与表头对齐
+    const permCells = MODULES.map(m=>{
+      const lv = u.role==="admin" ? "edit" : userPerm(u, m.key);
+      const color = lv==="edit"?"text-green-600":(lv==="read"?"text-blue-600":"text-gray-400");
+      return `<td class="text-center">${LV[lv]}</td>`;
+    }).join("");
+    tb.innerHTML += `<tr>
+      <td>${u.name||""}</td><td>${u.username}</td><td class="text-center">${u.site||"西华煤场"}</td><td class="text-center">${roleTxt}</td>
+      ${permCells}
+      <td class="text-center">${editBtn} ${delBtn}</td>
+    </tr>`;
+  });
+}
+
+// 编辑某用户权限（弹出简易输入：每个模块选择级别）
+function editPerm(idx){
+  const users=loadUsers();
+  const u=users[idx];
+  const perms = u.perms || {};
+  const q = MODULES.map(m=>{
+    const cur = perms[m.key] || "read";
+    return `${m.label}(${cur==="edit"?"可编辑":(cur==="read"?"只读":"无")})`;
+  }).join(", ");
+  // 用 prompt 循环设置（简化版）
+  MODULES.forEach(m=>{
+    const cur = perms[m.key] || "read";
+    const inp = prompt(`设置「${m.label}」权限：\n输入 edit(可编辑) / read(只读) / 留空(无权限)\n当前：${cur}`, cur);
+    if(inp===null) return;
+    const v = inp.trim()==="edit"?"edit":(inp.trim()==="read"?"read":(inp.trim()===""?"":""));
+    perms[m.key]=v;
+  });
+  users[idx].perms=perms;
+  saveUsers(users);
+  renderUsers();
+  alert("权限已更新，该用户需重新登录生效");
+}
+// 新增用户（仅管理员）
+function addUser(){
+  const name=document.getElementById("nuName").value.trim();
+  const username=document.getElementById("nuUser").value.trim();
+  const pass=document.getElementById("nuPass").value;
+  const site=document.getElementById("nuSite").value;
+  if(!name||!username||!pass){ alert("姓名、用户名、密码必填"); return; }
+  const users=loadUsers();
+  if(users.some(u=>u.username===username)){ alert("用户名已存在"); return; }
+  const perms={};
+  document.querySelectorAll(".nuPerm").forEach(cb=>{ perms[cb.value] = cb.checked ? "edit" : ""; });
+  users.push({ username, password:pass, role:"user", name, site, perms });
+  saveUsers(users);
+  document.getElementById("nuName").value="";
+  document.getElementById("nuUser").value="";
+  document.getElementById("nuPass").value="";
+  renderUsers();
+  alert(`已新增用户 ${username}（场地：${site}）`);
+}
+
+// 删除某用户（仅管理员，内置管理员不可删）
+function delUser(idx, username){
+  const users=loadUsers();
+  const target=users[idx];
+  if(target && target.role==="admin"){ alert("不能删除管理员"); return; }
+  if(!confirm(`确认删除用户 ${username}？`)) return;
+  users.splice(idx,1);
+  saveUsers(users);
+  renderUsers();
+}
+
+// 初始化
+renderUsers();
+// 拉取云端用户表并同步（多设备共享同一套账号）
+cloudPullUsers().then(function(cu){
+  if(cu && cu.length){ saveUsers(cu); renderUsers(); }
+});
+</script>
+</body>
+</html>
