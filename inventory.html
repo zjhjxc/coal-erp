@@ -31,6 +31,7 @@
         <col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:9%"><col style="width:11%"><col style="width:8%">
       </colgroup>
       <thead><tr class="bg-emerald-50 text-slate-700">
+        <th class="px-2 py-2.5 text-left font-semibold">煤场</th>
         <th class="px-2 py-2.5 text-left font-semibold">来源矿点</th>
         <th class="px-2 py-2.5 text-right font-semibold">厂收吨</th>
         <th class="px-2 py-2.5 text-right font-semibold">已配煤使用(吨)</th>
@@ -73,6 +74,7 @@ function renderInventory(){
     const u0 = stockStartTon>0 ? (stockStartMoney||0)/stockStartTon : 0;
     sSettle+=stockStartTon; sStock+=stockStartTon; sMoney+=(stockStartMoney||0);
     tb.innerHTML += `<tr class="border-t border-slate-100 odd:bg-white even:bg-emerald-50/40 hover:bg-emerald-50/60">
+      <td class="px-2 py-2.5">-</td>
       <td class="px-2 py-2.5">【期初库存】</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${stockStartTon.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">0.00</td>
@@ -92,6 +94,7 @@ function renderInventory(){
     sSettle+=settle; sUsed+=used; sStock+=stock; sMoney+=money;
     sWaterW+=(p.totalWater||0)*stock; sSulfurW+=(p.sulfur||0)*stock; sVolaW+=(p.arVola||0)*stock; sAshW+=(p.ash||0)*stock; sHeatW+=(p.heat||0)*stock;
     tb.innerHTML += `<tr class="border-t border-slate-100 odd:bg-white even:bg-emerald-50/40 hover:bg-emerald-50/60">
+      <td class="px-2 py-2.5">${p.purchaseTo||"-"}</td>
       <td class="px-2 py-2.5">${p.from||""}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${settle.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${used.toFixed(2)}</td>
@@ -106,6 +109,7 @@ function renderInventory(){
     </tr>`;
   });
   tb.innerHTML += `<tr class="bg-emerald-100 font-semibold border-t-2 border-emerald-400">
+    <td class="px-2 py-2.5">-</td>
     <td class="px-2 py-2.5">【汇总】</td>
     <td class="px-2 py-2.5 text-right tabular-nums">${sSettle.toFixed(2)}</td>
     <td class="px-2 py-2.5 text-right tabular-nums">${sUsed.toFixed(2)}</td>
