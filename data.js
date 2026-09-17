@@ -18,15 +18,16 @@ let stockStartMoney = 0;
         'body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif}',
         '.bg-white{border-radius:1rem;transition:box-shadow .25s ease,transform .2s ease,border-color .25s ease}',
         '.bg-white:hover{box-shadow:0 12px 32px rgba(15,23,42,.09)}',
-        'table thead tr{background:linear-gradient(180deg,#eef2f7,#e0e7ef)!important}',
-        'table thead th{color:#0f172a!important;font-weight:600;letter-spacing:.02em}',
+        'table thead tr{background:linear-gradient(180deg,#f7f0dd,#ece0c0)!important}',
+        'table thead th{color:#5a4520!important;font-weight:600;letter-spacing:.02em}',
         'table tbody tr{transition:background .15s ease}',
-        'table tbody tr:hover{background:#f0f5fb!important}',
+        'table tbody tr:hover{background:#fbf6e9!important}',
         'button{transition:filter .15s,transform .1s,box-shadow .15s}',
-        'button:hover{filter:brightness(1.07)}',
+        'button:hover{filter:brightness(1.08)}',
         'button:active{transform:translateY(1px)}',
+        '.bg-blue-600,.bg-blue-500,.bg-blue-700,.bg-blue-400,.text-white.bg-blue-600{background:linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f)!important;color:#1a1408!important}',
         'input,select,textarea{transition:border-color .2s,box-shadow .2s}',
-        'input:focus,select:focus,textarea:focus{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,.15)!important;outline:none}',
+        'input:focus,select:focus,textarea:focus{border-color:#c99a2e!important;box-shadow:0 0 0 3px rgba(201,154,46,.15)!important;outline:none}',
         '.overflow-x-auto{border-radius:12px}',
         '::-webkit-scrollbar{width:8px;height:8px}',
         '::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}',
@@ -175,9 +176,9 @@ function renderUserBar(){
   if(!bar) return;
   bar.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <span style="padding:5px 12px;border-radius:999px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;font-size:13px;font-weight:600">🏭 ${user.site||"西华煤场"}</span>
-      <span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#334155;font-weight:600">${user.role==="admin"?"👑":"👤"} ${user.name||user.username}<span style="color:#94a3b8;font-size:12px;font-weight:400">${user.role==="admin"?"管理员":"普通用户"}</span></span>
-      ${user.role==="admin" ? `<a href="users.html" style="padding:6px 12px;border-radius:8px;background:#dbeafe;color:#1d4ed8;font-size:13px;text-decoration:none;font-weight:600">用户管理</a>` : ""}
+      <span style="padding:5px 12px;border-radius:999px;background:#fff7e0;border:1px solid #e8c55c;color:#a67c00;font-size:13px;font-weight:600">🏭 ${user.site||"西华煤场"}</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#4a3a15;font-weight:600">${user.role==="admin"?"👑":"👤"} ${user.name||user.username}<span style="color:#b09a60;font-size:12px;font-weight:400">${user.role==="admin"?"管理员":"普通用户"}</span></span>
+      ${user.role==="admin" ? `<a href="users.html" style="padding:6px 12px;border-radius:8px;background:#f7e7bd;color:#a67c00;font-size:13px;text-decoration:none;font-weight:600">用户管理</a>` : ""}
       <button onclick="logout()" style="padding:6px 14px;border-radius:8px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">退出</button>
     </div>`;
 }
@@ -402,7 +403,7 @@ function renderNav(active){
     if(mod && !canAccess(mod)) return ""; // 无权限的模块不显示
     const label = map[href];
     const on = href === active;
-    return `<a href="${href}" style="display:inline-block;padding:9px 15px;margin:0 3px;border-radius:11px;text-decoration:none;font-size:14px;font-weight:600;${on?'background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;box-shadow:0 3px 12px rgba(59,130,246,.35)':'background:#f1f5f9;color:#475569'};transition:all .18s;" onmouseover="this.style.background='${on?'linear-gradient(135deg,#2563eb,#4f46e5)':'#dbeafe'}';this.style.color='${on?'#fff':'#1d4ed8'}'" onmouseout="this.style.background='${on?'linear-gradient(135deg,#2563eb,#4f46e5)':'#f1f5f9'}';this.style.color='${on?'#fff':'#475569'}'">${label}</a>`;
+    return `<a href="${href}" style="display:inline-block;padding:9px 15px;margin:0 3px;border-radius:11px;text-decoration:none;font-size:14px;font-weight:600;${on?'background:linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f);color:#1a1408;box-shadow:0 3px 12px rgba(177,138,31,.4)':'background:#f7f1e3;color:#7a6a3a'};transition:all .18s;" onmouseover="this.style.background='${on?'linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f)':'#f3e7c4'}';this.style.color='${on?'#1a1408':'#a67c00'}'" onmouseout="this.style.background='${on?'linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f)':'#f7f1e3'}';this.style.color='${on?'#1a1408':'#7a6a3a'}'">${label}</a>`;
   }).join("");
   nav.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px;background:#fff;padding:9px;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 2px 12px rgba(0,0,0,.04)">${pills}</div>`;
 }
