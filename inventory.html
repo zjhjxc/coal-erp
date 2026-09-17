@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>库存 - 煤炭进销存</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-4 bg-gray-100">
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-xl font-bold">📦 库存</h1>
+  <div id="userbar"></div>
+</div>
+<div id="nav" class="mb-4"></div>
+
+<div class="p-4 border rounded bg-gray-50">
+  <div class="flex items-center gap-2 mb-3">
+    <div class="w-1.5 h-6 rounded bg-emerald-500"></div>
+    <h3 class="text-lg font-bold text-slate-800">库存台账（来源于采购记录）</h3>
+    <button onclick="recalcMixCosts();renderInventory();showRecalcDiag();" class="ml-3 px-3 py-1.5 rounded bg-emerald-500 hover:bg-emerald-600 text-white text-sm">重算配煤成本</button>
+    <div id="recalcDiagBox" class="w-full mt-2 border border-emerald-200 rounded bg-emerald-50/60 p-3 text-xs hidden">
+      <div class="font-semibold mb-2 text-emerald-700">配煤成本重算诊断（原料→当前单价）</div>
+      <div id="recalcDiagContent"></div>
+    </div>
+  </div>
+  <div class="border p-3 rounded bg-white overflow-x-auto">
+    <table class="w-full text-sm" style="table-layout:fixed">
+      <colgroup>
+        <col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:9%"><col style="width:11%"><col style="width:8%">
+      </colgroup>
+      <thead><tr class="bg-emerald-50 text-slate-700">
+        <th class="px-2 py-2.5 text-left font-semibold">来源矿点</th>
+        <th class="px-2 py-2.5 text-right font-semibold">厂收吨</th>
+        <th class="px-2 py-2.5 text-right font-semibold">已配煤使用(吨)</th>
+        <th class="px-2 py-2.5 text-right font-semibold">库存(吨)</th>
+        <th class="px-2 py-2.5 text-right font-semibold">水</th>
+        <th class="px-2 py-2.5 text-right font-semibold">硫</th>
+        <th class="px-2 py-2.5 text-right font-semibold">挥发</th>
+        <th class="px-2 py-2.5 text-right font-semibold">灰份</th>
+        <th class="px-2 py-2.5 text-right font-semibold">热值</th>
+        <th class="px-2 py-2.5 text-right font-semibold">单价(元/吨)</th>
+        <th class="px-2 py-2.5 text-right font-semibold">库存金额(元)</th>
+      </tr></thead>
+      <tbody id="inventoryBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+// 显示配煤成本重算诊断（供核对原料单价匹配）
+function showRecalcDiag(){
+  const box=document.getElementById("recalcDiagBox"), content=document.getElementById("recalcDiagContent");
+  if(!box||!content) return;
+  box.classList.remove("hidden");
+  let h="";
+  if(!Array.isArray(recalcDiag)||!recalcDiag.length){ content.innerHTML="<div>无配煤方案数据</div>"; return; }
+  recalcDiag.forEach(d=>{
+    h+=`<div class="mb-2"><b>方案${d.i}</b>（成品：${d.target}）→ 配煤成本 ${d.cost}</div>`;
+    d.items.forEach(it=>{ h+=`<div class="pl-3">原料：${it.from}${it.no?'('+it.no+')':''}，用${it.useTon}吨 → ${it.matched}${it.unit?('，单价 '+it.unit):''}</div>`; });
+  });
+  content.innerHTML=h;
+}
+function renderInventory(){
+  const tb = document.getElementById("inventoryBody");
+  tb.innerHTML = "";
+  let sSettle=0, sUsed=0, sStock=0, sMoney=0, sWaterW=0, sSulfurW=0, sVolaW=0, sAshW=0, sHeatW=0;
+  const mixUsed = calcMixUsed();
+  // 期初库存作为一行（与总览看板口径一致）
+  if(stockStartTon > 0.001){
+    const u0 = stockStartTon>0 ? (stockStartMoney||0)/stockStartTon : 0;
+    sSettle+=stockStartTon; sStock+=stockStartTon; sMoney+=(stockStartMoney||0);
+    tb.innerHTML += `<tr class="border-t border-slate-100 odd:bg-white even:bg-emerald-50/40 hover:bg-emerald-50/60">
+      <td class="px-2 py-2.5">【期初库存】</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${stockStartTon.toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">0.00</td>
+      <td class="px-2 py-2.5 text-right tabular-nums font-medium">${stockStartTon.toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">-</td><td class="px-2 py-2.5 text-right tabular-nums">-</td><td class="px-2 py-2.5 text-right tabular-nums">-</td><td class="px-2 py-2.5 text-right tabular-nums">-</td><td class="px-2 py-2.5 text-right tabular-nums">-</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${u0.toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${stockStartMoney||0}</td>
+    </tr>`;
+  }
+  purchaseList.forEach(p=>{
+    const settle = p.settle||0;
+    const stock = (p.stockRemain ?? settle)||0;
+    if(stock<=0.001) return; // 库存为0的行自动隐藏
+    const used = mixUsed[p.no] || (mixUsed['F:'+p.from]||0); // 已配煤使用=作为原料被配煤消耗的吨数
+    const unit = settle>0 ? (p.totalCostAll||0)/settle : 0;
+    const money = roundInt(stock*unit);
+    sSettle+=settle; sUsed+=used; sStock+=stock; sMoney+=money;
+    sWaterW+=(p.totalWater||0)*stock; sSulfurW+=(p.sulfur||0)*stock; sVolaW+=(p.arVola||0)*stock; sAshW+=(p.ash||0)*stock; sHeatW+=(p.heat||0)*stock;
+    tb.innerHTML += `<tr class="border-t border-slate-100 odd:bg-white even:bg-emerald-50/40 hover:bg-emerald-50/60">
+      <td class="px-2 py-2.5">${p.from||""}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${settle.toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${used.toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums font-medium">${stock.toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${(p.totalWater||0).toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${(p.sulfur||0).toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${(p.arVola||0).toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${(p.ash||0).toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${p.heat||0}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${unit.toFixed(2)}</td>
+      <td class="px-2 py-2.5 text-right tabular-nums">${money}</td>
+    </tr>`;
+  });
+  tb.innerHTML += `<tr class="bg-emerald-100 font-semibold border-t-2 border-emerald-400">
+    <td class="px-2 py-2.5">【汇总】</td>
+    <td class="px-2 py-2.5 text-right tabular-nums">${sSettle.toFixed(2)}</td>
+    <td class="px-2 py-2.5 text-right tabular-nums">${sUsed.toFixed(2)}</td>
+    <td class="px-2 py-2.5 text-right tabular-nums">${sStock.toFixed(2)}</td>
+    <td class="px-2 py-2.5 text-right tabular-nums">${sStock>0 ? (sWaterW/sStock).toFixed(2) : "0.00"}</td>
+    <td class="px-2 py-2.5 text-right tabular-nums">${sStock>0 ? (sSulfurW/sStock).toFixed(2) : "0.00"}</td>
+    <td class="px-2 py-2.5 text-right tabular-nums">${sStock>0 ? (sVolaW/sStock).toFixed(2) : "0.00"}</td>
+    <td class="px-2 py-2.5 text-right tabular-nums">${sStock>0 ? (sAshW/sStock).toFixed(2) : "0.00"}</td>
+    <td class="px-2 py-2.5 text-right tabular-nums">${sStock>0 ? roundInt(sHeatW/sStock) : 0}</td>
+    <td class="px-2 py-2.5 text-right tabular-nums">${sStock>0 ? (sMoney/sStock).toFixed(2) : "0.00"}</td>
+    <td class="px-2 py-2.5 text-right tabular-nums">${sMoney}</td>
+  </tr>`;
+}
+loadAllData();
+initPage("inventory.html");
+renderInventory();
+onCloudReady(renderInventory); // 云端数据同步后自动重渲染
+</script>
+</body>
+</html>
