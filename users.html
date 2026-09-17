@@ -39,6 +39,15 @@
       <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuPerm" value="export" checked>导出</label>
     </div>
   </div>
+  <div class="mt-3">
+    <label class="block text-xs text-slate-500 mb-1">可访问煤场（可多选，普通用户只能在这些煤场间切换，默认勾选其场地）</label>
+    <div class="flex flex-wrap gap-3">
+      <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuSite2" value="西华煤场" checked>西华煤场</label>
+      <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuSite2" value="禹州煤场">禹州煤场</label>
+      <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuSite2" value="告成煤场">告成煤场</label>
+      <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="nuSite2" value="叶县煤场">叶县煤场</label>
+    </div>
+  </div>
   <button onclick="addUser()" class="mt-3 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">保存用户</button>
 </div>
 
@@ -77,7 +86,7 @@ function renderUsers(){
   loadUsers().forEach((u,i)=>{
     const roleTxt = u.role==="admin"?"管理员":"普通用户";
     const editBtn = (u.username!==me.username && u.role!=="admin")
-      ? `<button onclick="editPerm(${i})" class="px-2 py-1 bg-blue-400 text-white rounded mr-1">设权限</button>`
+      ? `<button onclick="editPerm(${i})" class="px-2 py-1 bg-blue-400 text-white rounded mr-1">设权限</button><button onclick="editSites(${i})" class="px-2 py-1 bg-amber-400 text-white rounded mr-1">设煤场</button>`
       : (u.role==="admin"?"<span class='text-gray-400 text-xs'>系统</span>":"");
     const delBtn = u.username===me.username ? "<span class='text-gray-400'>当前</span>"
       : (u.role==="admin" ? "<span class='text-gray-400'>内置</span>"
@@ -89,7 +98,7 @@ function renderUsers(){
       return `<td class="text-center">${LV[lv]}</td>`;
     }).join("");
     tb.innerHTML += `<tr>
-      <td>${u.name||""}</td><td>${u.username}</td><td class="text-center">${u.site||"西华煤场"}</td><td class="text-center">${roleTxt}</td>
+      <td>${u.name||""}</td><td>${u.username}</td><td class="text-center">${u.site||"西华煤场"}${(Array.isArray(u.sites)&&u.sites.length>1)?`<div class="text-[11px] text-gray-400">${u.sites.join("、")}</div>`:""}</td><td class="text-center">${roleTxt}</td>
       ${permCells}
       <td class="text-center">${editBtn} ${delBtn}</td>
     </tr>`;
@@ -118,6 +127,22 @@ function editPerm(idx){
   renderUsers();
   alert("权限已更新，该用户需重新登录生效");
 }
+// 设置某用户可访问煤场（管理员手动开放其他煤场权限）
+function editSites(idx){
+  const users=loadUsers();
+  const u=users[idx];
+  const cur=(u.sites&&u.sites.length)?u.sites.join(","):(u.site||"西华煤场");
+  const inp=prompt("设置该用户可访问的煤场（逗号分隔，至少含其默认场地）\n当前："+cur, cur);
+  if(inp===null) return;
+  const sites=inp.split(/[,，]/).map(s=>s.trim()).filter(s=>["西华煤场","禹州煤场","告成煤场","叶县煤场"].indexOf(s)>=0);
+  if(sites.length===0){ alert("至少选择一个有效煤场"); return; }
+  const own=u.site||"西华煤场";
+  if(sites.indexOf(own)<0) sites.unshift(own);
+  u.sites=sites;
+  saveUsers(users);
+  renderUsers();
+  alert("煤场权限已更新，该用户需重新登录生效");
+}
 // 新增用户（仅管理员）
 function addUser(){
   const name=document.getElementById("nuName").value.trim();
@@ -129,7 +154,10 @@ function addUser(){
   if(users.some(u=>u.username===username)){ alert("用户名已存在"); return; }
   const perms={};
   document.querySelectorAll(".nuPerm").forEach(cb=>{ perms[cb.value] = cb.checked ? "edit" : ""; });
-  users.push({ username, password:pass, role:"user", name, site, perms });
+  let sites=[];
+  document.querySelectorAll(".nuSite2").forEach(cb=>{ if(cb.checked) sites.push(cb.value); });
+  if(sites.indexOf(site)<0) sites.unshift(site);
+  users.push({ username, password:pass, role:"user", name, site, sites, perms });
   saveUsers(users);
   document.getElementById("nuName").value="";
   document.getElementById("nuUser").value="";
