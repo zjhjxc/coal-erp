@@ -16,8 +16,8 @@ let stockStartMoney = 0;
       st.textContent=[
         '*{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}',
         'body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif}',
-        '.bg-white{border-radius:1rem;transition:box-shadow .25s ease,transform .2s ease,border-color .25s ease}',
-        '.bg-white:hover{box-shadow:0 12px 32px rgba(15,23,42,.09)}',
+        '.bg-white.rounded-2xl{background:linear-gradient(180deg,#ffffff,#fcfaf3);box-shadow:0 1px 3px rgba(90,60,10,.06),0 10px 26px rgba(90,60,10,.10);transition:box-shadow .25s,transform .2s;border:1px solid rgba(201,154,46,.16)!important}',
+        '.bg-white.rounded-2xl:hover{box-shadow:0 4px 8px rgba(90,60,10,.08),0 24px 50px rgba(90,60,10,.16);transform:translateY(-3px)}',
         'table thead tr{background:linear-gradient(180deg,#f7f0dd,#ece0c0)!important}',
         'table thead th{color:#5a4520!important;font-weight:600;letter-spacing:.02em}',
         'table tbody tr{transition:background .15s ease}',
@@ -25,14 +25,14 @@ let stockStartMoney = 0;
         'button{transition:filter .15s,transform .1s,box-shadow .15s}',
         'button:hover{filter:brightness(1.08)}',
         'button:active{transform:translateY(1px)}',
-        '.bg-blue-600,.bg-blue-500,.bg-blue-700,.bg-blue-400,.text-white.bg-blue-600{background:linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f)!important;color:#1a1408!important}',
+        '.bg-blue-600,.bg-blue-500,.bg-blue-700,.bg-blue-400,.text-white.bg-blue-600{background:linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f)!important;color:#1a1408!important;box-shadow:0 3px 10px rgba(177,138,31,.35),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 0 rgba(90,60,10,.2)!important}',
         'input,select,textarea{transition:border-color .2s,box-shadow .2s}',
         'input:focus,select:focus,textarea:focus{border-color:#c99a2e!important;box-shadow:0 0 0 3px rgba(201,154,46,.15)!important;outline:none}',
-        '.overflow-x-auto{border-radius:12px}',
+        '.overflow-x-auto{border-radius:12px;box-shadow:inset 0 0 0 1px rgba(201,154,46,.14),0 4px 16px rgba(90,60,10,.07)}',
         '::-webkit-scrollbar{width:8px;height:8px}',
         '::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}',
         '::-webkit-scrollbar-track{background:transparent}',
-        '.stat{border-radius:14px;padding:14px 16px;color:#fff;position:relative;overflow:hidden}',
+        '.stat{border-radius:14px;padding:14px 16px;color:#fff;position:relative;overflow:hidden;box-shadow:0 6px 18px rgba(90,60,10,.20),inset 0 1px 0 rgba(255,255,255,.28),inset 0 -3px 0 rgba(0,0,0,.12)}',
         '.stat::after{content:"";position:absolute;right:-20px;top:-20px;width:70px;height:70px;background:rgba(255,255,255,.12);border-radius:50%}',
         '.stat-blue{background:linear-gradient(135deg,#3b82f6,#2563eb)}',
         '.stat-cyan{background:linear-gradient(135deg,#06b6d4,#0891b2)}',
@@ -403,9 +403,9 @@ function renderNav(active){
     if(mod && !canAccess(mod)) return ""; // 无权限的模块不显示
     const label = map[href];
     const on = href === active;
-    return `<a href="${href}" style="display:inline-block;padding:9px 15px;margin:0 3px;border-radius:11px;text-decoration:none;font-size:14px;font-weight:600;${on?'background:linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f);color:#1a1408;box-shadow:0 3px 12px rgba(177,138,31,.4)':'background:#f7f1e3;color:#7a6a3a'};transition:all .18s;" onmouseover="this.style.background='${on?'linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f)':'#f3e7c4'}';this.style.color='${on?'#1a1408':'#a67c00'}'" onmouseout="this.style.background='${on?'linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f)':'#f7f1e3'}';this.style.color='${on?'#1a1408':'#7a6a3a'}'">${label}</a>`;
+    return `<a href="${href}" style="display:inline-block;padding:9px 15px;margin:0 3px;border-radius:11px;text-decoration:none;font-size:14px;font-weight:600;${on?'background:linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f);color:#1a1408;box-shadow:0 3px 12px rgba(177,138,31,.4),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -2px 0 rgba(90,60,10,.2)':'background:#f7f1e3;color:#7a6a3a;box-shadow:inset 0 1px 0 rgba(255,255,255,.6),0 1px 2px rgba(90,60,10,.08)'};transition:all .18s;" onmouseover="this.style.background='${on?'linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f)':'#f3e7c4'}';this.style.color='${on?'#1a1408':'#a67c00'}'" onmouseout="this.style.background='${on?'linear-gradient(135deg,#e8c55c,#c99a2e 50%,#b18a1f)':'#f7f1e3'}';this.style.color='${on?'#1a1408':'#7a6a3a'}'">${label}</a>`;
   }).join("");
-  nav.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px;background:#fff;padding:9px;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 2px 12px rgba(0,0,0,.04)">${pills}</div>`;
+  nav.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px;background:linear-gradient(180deg,#ffffff,#fbf8ee);padding:9px;border-radius:14px;border:1px solid rgba(201,154,46,.18);box-shadow:0 1px 3px rgba(90,60,10,.06),0 8px 20px rgba(90,60,10,.10)">${pills}</div>`;
 }
 
 // 页面统一初始化：校验登录 + 模块权限 + 渲染用户条 + 导航
