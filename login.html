@@ -5,22 +5,32 @@
 <title>登录 - 煤炭进销存</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
-<div class="bg-white rounded shadow-lg p-8 w-full max-w-sm">
-  <h1 class="text-2xl font-bold text-center mb-6">煤炭进销存管理系统</h1>
-  <form id="loginForm" onsubmit="return doLogin()" autocomplete="on">
-    <div class="mb-4">
-      <label class="text-sm">用户名</label>
-      <input type="text" id="username" name="username" autocomplete="username" class="border p-2 w-full mt-1" placeholder="请输入用户名">
-    </div>
-    <div class="mb-4">
-      <label class="text-sm">密码</label>
-      <input type="password" id="password" name="password" autocomplete="current-password" class="border p-2 w-full mt-1" placeholder="请输入密码">
-    </div>
-    <button type="submit" class="w-full py-2 bg-blue-600 text-white rounded hover:bg-blue-700">登 录</button>
-  </form>
-  <p class="text-center text-sm text-gray-500 mt-4">默认管理员：丁浩伦 / 123456</p>
-  <p id="msg" class="text-center text-sm text-red-500 mt-2"></p>
+<body class="min-h-screen flex items-center justify-center p-4" style="background:linear-gradient(135deg,#0f172a,#1e3a8a 50%,#2563eb)">
+<div style="position:fixed;inset:0;overflow:hidden;pointer-events:none">
+  <div style="position:absolute;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.06);top:-60px;right:-40px"></div>
+  <div style="position:absolute;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.05);bottom:-40px;left:-30px"></div>
+</div>
+<div class="w-full max-w-sm relative">
+  <div style="text-align:center;margin-bottom:20px">
+    <div style="width:66px;height:66px;margin:0 auto 12px;border-radius:18px;background:linear-gradient(135deg,#2563eb,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 8px 26px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15)">⛏️</div>
+    <h1 class="text-2xl font-extrabold text-white" style="text-shadow:0 2px 10px rgba(0,0,0,.3)">煤炭进销存管理系统</h1>
+    <p class="text-sm text-blue-100/80 mt-1">煤炭 · 仓储 · 财务 一体化管理</p>
+  </div>
+  <div class="bg-white rounded-2xl shadow-2xl p-7">
+    <form id="loginForm" onsubmit="return doLogin()" autocomplete="on">
+      <div class="mb-4">
+        <label class="text-sm font-medium text-slate-600">用户名</label>
+        <input type="text" id="username" name="username" autocomplete="username" class="mt-1 w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none" placeholder="请输入用户名">
+      </div>
+      <div class="mb-5">
+        <label class="text-sm font-medium text-slate-600">密码</label>
+        <input type="password" id="password" name="password" autocomplete="current-password" class="mt-1 w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none" placeholder="请输入密码">
+      </div>
+      <button type="submit" class="w-full py-2.5 rounded-xl text-white font-semibold text-sm cursor-pointer" style="background:linear-gradient(135deg,#2563eb,#4f46e5);box-shadow:0 4px 16px rgba(59,130,246,.4)">登 录</button>
+    </form>
+    <p class="text-center text-xs text-slate-400 mt-4">默认管理员：丁浩伦 / 123456</p>
+    <p id="msg" class="text-center text-sm text-red-500 mt-2"></p>
+  </div>
 </div>
 <script src="data.js"></script>
 <script>
