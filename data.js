@@ -1,0 +1,377 @@
+// ===== 煤炭进销存 共享数据层 =====
+// 全局状态（所有页面通过 localStorage 共享）
+let purchaseList = [];
+let saleList = [];
+let coalMixRecordList = [];
+let mixSelectedList = [];
+let stockStartTon = 0;
+let stockStartMoney = 0;
+
+// ================== 用户与登录 ==================
+const USERS_KEY = "coalUsers";
+const SESSION_KEY = "coalSession";
+
+// 场地清单（用于登录/新增用户/显示）
+const SITES = ["西华煤场","禹州煤场","告成煤场","叶县煤场"];
+// 旧场地名 → 新场地名（迁移用：旧数据 key 与用户 site 自动改名，避免数据丢失）
+const SITE_MAP = { "总场":"西华煤场", "场地A":"禹州煤场", "场地B":"告成煤场", "场地C":"叶县煤场" };
+
+// 场地改名迁移：旧 key 数据 → 新 key；用户表与当前会话 site 同步改名
+function migrateSites(){
+  Object.keys(SITE_MAP).forEach(old=>{
+    const ok="coalData_"+old, nk="coalData_"+SITE_MAP[old];
+    const raw=localStorage.getItem(ok);
+    if(raw && !localStorage.getItem(nk)){ localStorage.setItem(nk, raw); localStorage.removeItem(ok); }
+  });
+  const users=loadUsers(); let changed=false;
+  users.forEach(u=>{ if(u.site && SITE_MAP[u.site]){ u.site=SITE_MAP[u.site]; changed=true; } });
+  if(changed) saveUsers(users);
+  const sess=currentUser();
+  if(sess && sess.site && SITE_MAP[sess.site]){ sess.site=SITE_MAP[sess.site]; localStorage.setItem(SESSION_KEY, JSON.stringify(sess)); }
+}
+
+// 模块清单：key 用于权限，label 用于导航与用户管理
+const MODULES = [
+  { key:"purchase", label:"采购" },
+  { key:"inventory",label:"库存" },
+  { key:"mix",      label:"场地配煤" },
+  { key:"sale",     label:"销售出库" },
+  { key:"finance",  label:"财务管理" },
+  { key:"export",   label:"数据导出" }
+];
+
+// 默认权限：admin 全模块可编辑
+function defaultPerms(){
+  const p = {};
+  MODULES.forEach(m=> p[m.key] = "edit"); // 无 / read / edit
+  return p;
+}
+
+// 默认管理员账号（携带完整权限，场地为"西华煤场"）
+function defaultUsers(){
+  return [{ username:"丁浩伦", password:"123456", role:"admin", name:"丁浩伦", site:"西华煤场", perms:defaultPerms() }];
+}
+function loadUsers(){
+  try {
+    const raw = localStorage.getItem(USERS_KEY);
+    if(!raw) return defaultUsers();
+    const u = JSON.parse(raw);
+    if(!Array.isArray(u) || !u.length) return defaultUsers();
+    // 兼容旧数据：补充 perms / site 字段
+    let ch=false;
+    u.forEach(x=>{
+      if(!x.perms){ x.perms = x.role==="admin" ? defaultPerms() : {}; }
+      if(!x.site){ x.site = "西华煤场"; }
+      // 管理员账号改名/改密：admin → 丁浩伦 / 123456
+      if(x.role==="admin"){
+        if(x.username==="admin"){ x.username="丁浩伦"; ch=true; }
+        if(x.name!=="丁浩伦"){ x.name="丁浩伦"; ch=true; }
+        if(x.password!=="123456"){ x.password="123456"; ch=true; }
+      }
+    });
+    if(ch) saveUsers(u);
+    // 当前会话若为旧 admin，同步改名（避免用户条仍显示旧名）
+    const sess=currentUser();
+    if(sess && sess.role==="admin" && sess.username==="admin"){
+      sess.username="丁浩伦"; sess.name="丁浩伦";
+      localStorage.setItem(SESSION_KEY, JSON.stringify(sess));
+    }
+    return u;
+  } catch(e){ return defaultUsers(); }
+}
+function saveUsers(list){ localStorage.setItem(USERS_KEY, JSON.stringify(list)); cloudPushUsers(list); }
+
+// 权限判断：module 权限级别，返回 "edit"|"read"|"" (无)
+function userPerm(user, moduleKey){
+  if(!user) return "";
+  if(user.role === "admin") return "edit";
+  const p = user.perms || {};
+  return p[moduleKey] || "";
+}
+function canAccess(moduleKey){
+  return userPerm(currentUser(), moduleKey) !== "";
+}
+function canEdit(moduleKey){
+  return userPerm(currentUser(), moduleKey) === "edit";
+}
+// 删除仍限管理员
+function isAdmin(){ const u=currentUser(); return !!u && u.role==="admin"; }
+function canDelete(){ return isAdmin(); }
+
+// 当前登录会话
+function currentUser(){
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch(e){ return null; }
+}
+function requireLogin(){
+  const u = currentUser();
+  if(!u) { location.href = "login.html"; return null; }
+  return u;
+}
+// 当前用户的场地
+function currentSite(){
+  const u = currentUser();
+  return (u && u.site) ? u.site : "西华煤场";
+}
+
+// 登出
+function logout(){
+  localStorage.removeItem(SESSION_KEY);
+  location.href = "login.html";
+}
+
+// 渲染右上角用户信息条 + 权限（供各业务页调用）
+function renderUserBar(){
+  const user = currentUser();
+  if(!user) return;
+  const bar = document.getElementById("userbar");
+  if(!bar) return;
+  bar.innerHTML = `
+    <span class="px-3 py-1 rounded-full bg-white shadow-sm text-sm mr-2">🏭 ${user.site||"西华煤场"}</span>
+    <span class="mr-2 text-sm">👤 ${user.name||user.username}（${user.role==="admin"?"管理员":"普通用户"}）</span>
+    ${user.role==="admin" ? `<a href="users.html" class="mr-2 px-3 py-1 rounded-lg bg-blue-100 text-blue-700 text-sm hover:bg-blue-200">用户管理</a>` : ""}
+    <button onclick="logout()" class="px-3 py-1 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600">退出</button>`;
+}
+
+// ===== 金额取整 =====
+function roundInt(num){ return Math.round(num); }
+
+// ===== Supabase 云同步（REST，原生 fetch，无额外依赖）=====
+// 数据存云端 app_state / users 表；本地 localStorage 作为离线缓存兜底
+var SUPABASE_URL = "https://fvyvtueusascxoffvpaf.supabase.co";
+var SUPABASE_KEY = "sb_publishable_uKZTV9VfhxSTqJ7diLDz0w_LoTN5Vkm";
+var _cloudHooks = []; // 云端数据就绪后要重新渲染的回调
+
+// 页面注册：云端数据拉取完成后执行 fn（用于刷新当前页）
+function onCloudReady(fn){ if(typeof fn==='function') _cloudHooks.push(fn); }
+function fireCloudReady(){ _cloudHooks.forEach(function(fn){ try{ fn(); }catch(e){} }); }
+
+// 发起 REST 请求，失败静默返回 null（不影响本地）
+function _cfetch(path, opts){
+  opts = opts || {};
+  var h = { "apikey": SUPABASE_KEY, "Authorization": "Bearer " + SUPABASE_KEY, "Content-Type": "application/json" };
+  for(var k in (opts.headers||{})) h[k] = opts.headers[k]; // 合并请求头，保留 apikey
+  var cfg = { method: opts.method||"GET", headers: h };
+  if(opts.body) cfg.body = opts.body;
+  return fetch(SUPABASE_URL + "/rest/v1/" + path, cfg)
+    .then(function(r){ return r.text().then(function(t){ try{ return JSON.parse(t); }catch(e){ return t; } }); })
+    .catch(function(){ return null; });
+}
+
+// 当前场地业务数据 → 云端 upsert
+function cloudPushAppState(){
+  var site = currentSite(); if(!site) return;
+  var payload = { purchaseList: purchaseList, saleList: saleList, coalMixRecordList: coalMixRecordList, stockStartTon: stockStartTon, stockStartMoney: stockStartMoney };
+  return _cfetch("app_state", { method:"POST", headers:{ "Prefer":"resolution=merge-duplicates" }, body: JSON.stringify([{ site: site, payload: payload, updated_at: new Date().toISOString() }]) });
+}
+// 从云端拉取当前场地业务数据
+function cloudPullAppState(){
+  var site = currentSite(); if(!site) return Promise.resolve(null);
+  return _cfetch("app_state?site=eq." + encodeURIComponent(site) + "&select=payload").then(function(rows){
+    if(!Array.isArray(rows) || !rows.length) return null;
+    return (rows[0] && rows[0].payload) || null;
+  });
+}
+// 用户表 → 云端 upsert
+function cloudPushUsers(list){
+  var rows = list.map(function(u){ return { username: u.username, payload: u, updated_at: new Date().toISOString() }; });
+  return _cfetch("users", { method:"POST", headers:{ "Prefer":"resolution=merge-duplicates" }, body: JSON.stringify(rows) });
+}
+// 从云端拉取全部用户
+function cloudPullUsers(){
+  return _cfetch("users?select=username,payload").then(function(rows){
+    if(!Array.isArray(rows) || !rows.length) return null;
+    return rows.map(function(r){ return r.payload; });
+  });
+}
+
+// ==== localStorage 业务数据持久化（按场地隔离）====
+// 数据 key 按当前用户场地区分：coalData_<site>，同场地共享、不同场地互不可见
+function dataKey(){
+  return "coalData_" + currentSite();
+}
+function saveAllData(){
+  const obj = { purchaseList, saleList, coalMixRecordList, stockStartTon, stockStartMoney };
+  localStorage.setItem(dataKey(), JSON.stringify(obj));
+  cloudPushAppState(); // 异步同步到云端（file:// 下 CORS 可能失败，静默不影响本地）
+}
+function loadAllData(){
+  migrateSites();
+  const str = localStorage.getItem(dataKey());
+  // 无数据或读取失败：清空，避免残留上一场地/上次数据
+  purchaseList = []; saleList = []; coalMixRecordList = []; stockStartTon = 0; stockStartMoney = 0;
+  if(!str) return _pullCloud();
+  try {
+    const obj = JSON.parse(str);
+    purchaseList = obj.purchaseList || [];
+    saleList = obj.saleList || [];
+    coalMixRecordList = obj.coalMixRecordList || [];
+    stockStartTon = obj.stockStartTon || 0;
+    stockStartMoney = obj.stockStartMoney || 0;
+  } catch(e){ console.warn("数据读取失败", e); }
+  // 加载后按原料当前单价同步配煤成品成本（原料单价被修改后自动跟随）
+  recalcMixCosts(true);
+  _pullCloud();
+}
+// 从云端拉取当前场地数据，覆盖本地并触发页面重渲染（供多设备同步）
+function _pullCloud(){
+  cloudPullAppState().then(function(obj){
+    if(!obj){
+      // 云端无数据：若本地有数据，首次自动推送到云端（完成本地历史数据迁移）
+      if(purchaseList.length || saleList.length || coalMixRecordList.length || stockStartTon || stockStartMoney) cloudPushAppState();
+      return;
+    }
+    purchaseList = obj.purchaseList || []; saleList = obj.saleList || [];
+    coalMixRecordList = obj.coalMixRecordList || []; stockStartTon = obj.stockStartTon || 0; stockStartMoney = obj.stockStartMoney || 0;
+    try{ localStorage.setItem(dataKey(), JSON.stringify({ purchaseList, saleList, coalMixRecordList, stockStartTon, stockStartMoney })); }catch(e){}
+    recalcMixCosts(true);
+    fireCloudReady();
+  });
+}
+
+// 按多级策略找到配煤原料对应的当前采购批次（单号→矿点+吨位→矿点有库存）
+function findSrcForMix(s){
+  const rec = s && s.source; if(!rec) return null;
+  if(rec.no){ const f=purchaseList.filter(p=>p.no===rec.no); if(f.length) return f[0]; }
+  const bySame=purchaseList.filter(p=>p.from===rec.from && p.from && Math.abs((p.settle||0)-(rec.settle||0))<0.001);
+  if(bySame.length) return bySame[0];
+  const byFrom=purchaseList.filter(p=>p.from===rec.from && p.from && ((p.stockRemain ?? p.settle)>0));
+  if(byFrom.length) return byFrom[0];
+  return null;
+}
+// 重算配煤成品成本：修改原料采购单价后，追溯更新所有用该原料配煤的成品成本/单价
+var recalcDiag = []; // 诊断：每次重算时记录各配煤方案原料匹配明细
+function recalcMixCosts(doSave){
+  if(!Array.isArray(coalMixRecordList)) return;
+  recalcDiag = [];
+  let changed=false;
+  coalMixRecordList.forEach((it,i)=>{
+    if(!it || !Array.isArray(it.sourceList) || !it.sourceList.length) return;
+    let cost=0, missing=false, diagItems=[];
+    it.sourceList.forEach(s=>{
+      const src=findSrcForMix(s);
+      if(!src){ missing=true; diagItems.push({from:(s.source&&s.source.from)||'', no:(s.source&&s.source.no)||'', useTon:s.useTon, matched:'未匹配到原料', unit:null}); return; }
+      cost += ((src.totalCostAll||0)/((src.settle||1))) * (s.useTon||0);
+      diagItems.push({from:(s.source&&s.source.from)||'', no:(s.source&&s.source.no)||'', useTon:s.useTon, matched:'匹配到 '+src.from+'('+src.no+')', unit:((src.totalCostAll||0)/((src.settle||1))).toFixed(2)});
+    });
+    if(missing){
+      recalcDiag.push({i:i+1, outNo:it.outNo||'', items:diagItems, cost:'原料缺失，未更新', target:''});
+      return; // 原料批次缺失，保持该成品原值，避免误覆盖
+    }
+    cost=roundInt(cost);
+    // 优先用方案记录的 outNo 匹配成品；无 outNo 时按配煤方案顺序与 MIX 成品顺序对应
+    let target = it.outNo ? purchaseList.filter(p=>p.no===it.outNo)[0] : null;
+    if(!target){
+      let cnt=0;
+      purchaseList.forEach(p=>{
+        if((p.no||"").indexOf("MIX-")===0){ if(cnt===i) target=p; cnt++; }
+      });
+    }
+    if(target){
+      const changedNow = (target.totalCostAll!==cost);
+      target.totalCostAll=cost;
+      target.tonCostAll= target.settle>0 ? cost/target.settle : 0;
+      // 配煤成品只入库存，财务煤款记0（不产生煤款应付）
+      target.coalUnitPrice=0;
+      target.coalTotalMoney=0;
+      target.coalPaidMoney=0;
+      if(changedNow) changed=true;
+      recalcDiag.push({i:i+1, outNo:it.outNo||'', items:diagItems, cost:cost+' 元', target:target.from+'('+target.no+') 单价→'+target.tonCostAll.toFixed(2)});
+    } else {
+      recalcDiag.push({i:i+1, outNo:it.outNo||'', items:diagItems, cost:cost+' 元', target:'未找到对应配煤成品'});
+    }
+  });
+  if(changed && doSave!==false) saveAllData();
+}
+
+// ==== 库存计算 ====
+// 统计每个采购批次作为原料被配煤消耗的吨数（按单号，回退矿点名）
+function calcMixUsed(){
+  const map={};
+  coalMixRecordList.forEach(it=>{
+    if(!it || !Array.isArray(it.sourceList)) return;
+    it.sourceList.forEach(s=>{
+      const src=s && s.source; if(!src) return;
+      const key = src.no ? src.no : (src.from ? 'F:'+src.from : null);
+      if(key) map[key]=(map[key]||0)+(s.useTon||0);
+    });
+  });
+  return map;
+}
+function calcStock(){
+  let remainTon = stockStartTon;
+  let remainMoney = stockStartMoney;
+  let totalInTon = 0, totalInMoney = 0, totalOutTon = 0;
+  purchaseList.forEach(p=>{
+    totalInTon += p.settle;
+    totalInMoney += p.totalCostAll;
+    const st = p.stockRemain ?? p.settle;
+    remainTon += st;
+    if(st>0 && p.tonCostAll) remainMoney += roundInt(st * p.tonCostAll);
+  });
+  saleList.forEach(s=>{
+    totalOutTon += s.saleWeight;
+  });
+  const avgCostPrice = remainTon > 0 ? remainMoney / remainTon : 0;
+  return { totalInTon, totalInMoney, totalOutTon, stockRemainTon: remainTon, stockRemainMoney: remainMoney, avgCostPrice };
+}
+
+// ==== 财务汇总 ====
+function calcFinance(){
+  let coalNeed=0, coalPaid=0, freightNeed=0, freightPaid=0, taxSum=0, brokerNeed=0, brokerPaid=0;
+  purchaseList.forEach(p=>{
+    coalNeed += p.coalTotalMoney;       coalPaid += p.coalPaidMoney||0;
+    freightNeed += p.freightTotal;      freightPaid += p.freightPaidMoney||0;
+    taxSum += p.taxAmount||0;
+    brokerNeed += p.brokerAmount;       brokerPaid += p.brokerPaidMoney||0;
+  });
+  return {
+    coalNeed, coalPaid, coalArrears: coalNeed - coalPaid,
+    freightNeed, freightPaid, freightArrears: freightNeed - freightPaid,
+    brokerNeed, brokerPaid, brokerArrears: brokerNeed - brokerPaid,
+    taxSum
+  };
+}
+
+// ==== 页面导航（按权限过滤）====
+function renderNav(active){
+  const nav = document.getElementById("nav");
+  const me = currentUser();
+  const map = {
+    "index.html":"📊 总览看板",
+    "purchase.html":"🛒 采购",
+    "inventory.html":"📦 库存",
+    "mix.html":"⚗️ 场地配煤",
+    "sale.html":"📤 销售出库",
+    "finance.html":"💰 财务管理",
+    "export.html":"📥 数据导出"
+  };
+  // 模块 key 与页面文件名对应
+  const pageModule = { "purchase.html":"purchase","inventory.html":"inventory","sale.html":"sale","mix.html":"mix","finance.html":"finance","export.html":"export" };
+  nav.innerHTML = Object.keys(map).map(href=>{
+    const mod = pageModule[href];
+    if(mod && !canAccess(mod)) return ""; // 无权限的模块不显示
+    const label = map[href];
+    const on = href === active
+      ? "background:#2563eb;color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.35)"
+      : "background:#fff;color:#334155;";
+    return `<a href="${href}" style="display:inline-block;padding:8px 16px;margin:0 4px;border-radius:10px;${on};text-decoration:none;font-size:14px;font-weight:500;border:1px solid ${href===active?'#2563eb':'#e2e8f0'};transition:all .15s;" onmouseover="this.style.background='${href===active?'#2563eb':'#eff6ff'}';this.style.color='${href===active?'#fff':'#2563eb'}'" onmouseout="this.style.background='${href===active?'#2563eb':'#fff'}';this.style.color='${href===active?'#fff':'#334155'}'">${label}</a>`;
+  }).join("");
+}
+
+// 页面统一初始化：校验登录 + 模块权限 + 渲染用户条 + 导航
+function initPage(active){
+  migrateSites();
+  requireLogin();
+  // 模块级访问控制
+  const mod = { "purchase.html":"purchase","sale.html":"sale","mix.html":"mix","finance.html":"finance","export.html":"export" }[active];
+  if(mod && !canAccess(mod)){
+    alert("您没有访问该模块的权限");
+    location.href = "index.html";
+    return;
+  }
+  renderUserBar();
+  renderNav(active);
+}
