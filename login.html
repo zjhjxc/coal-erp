@@ -5,32 +5,45 @@
 <title>登录 - 煤炭进销存</title>
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4" style="background:linear-gradient(135deg,#0f172a,#1e3a8a 50%,#2563eb)">
+<body class="min-h-screen flex items-center justify-center p-4" style="background:linear-gradient(160deg,#0b1120 0%,#14234a 40%,#1e3a8a 72%,#2563eb 100%)">
 <div style="position:fixed;inset:0;overflow:hidden;pointer-events:none">
-  <div style="position:absolute;width:220px;height:220px;border-radius:50%;background:rgba(255,255,255,.06);top:-60px;right:-40px"></div>
-  <div style="position:absolute;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.05);bottom:-40px;left:-30px"></div>
+  <div style="position:absolute;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,rgba(96,165,250,.18),transparent 70%);top:-80px;right:-60px"></div>
+  <div style="position:absolute;width:300px;height:300px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,.15),transparent 70%);bottom:-70px;left:-50px"></div>
+  <div style="position:absolute;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.08),transparent 70%);top:18%;left:10%"></div>
+  <svg style="position:absolute;bottom:0;left:0;width:100%;opacity:.55" viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none">
+    <path d="M0,90 C240,40 480,120 720,80 C960,40 1200,100 1440,60 L1440,120 L0,120 Z" fill="rgba(0,0,0,.18)"></path>
+    <path d="M0,112 C300,72 600,126 900,96 C1100,76 1300,110 1440,90 L1440,120 L0,120 Z" fill="rgba(0,0,0,.25)"></path>
+  </svg>
 </div>
+
 <div class="w-full max-w-sm relative">
-  <div style="text-align:center;margin-bottom:20px">
-    <div style="width:66px;height:66px;margin:0 auto 12px;border-radius:18px;background:linear-gradient(135deg,#2563eb,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:34px;box-shadow:0 8px 26px rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.15)">⛏️</div>
-    <h1 class="text-2xl font-extrabold text-white" style="text-shadow:0 2px 10px rgba(0,0,0,.3)">煤炭进销存管理系统</h1>
-    <p class="text-sm text-blue-100/80 mt-1">煤炭 · 仓储 · 财务 一体化管理</p>
-  </div>
-  <div class="bg-white rounded-2xl shadow-2xl p-7">
+  <div class="bg-white rounded-3xl p-8" style="box-shadow:0 25px 60px rgba(0,0,0,.35)">
+    <div style="text-align:center;margin-bottom:22px">
+      <div style="width:74px;height:74px;margin:0 auto 14px;border-radius:20px;background:linear-gradient(135deg,#2563eb,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:38px;box-shadow:0 10px 30px rgba(79,70,229,.4);position:relative"><span>⛏️</span><span style="position:absolute;inset:-6px;border-radius:26px;border:2px solid rgba(99,102,241,.28)"></span></div>
+      <h1 class="text-2xl font-extrabold text-slate-800">煤炭进销存管理系统</h1>
+      <p class="text-xs text-slate-400 mt-1.5">煤炭 · 仓储 · 财务 一体化管理</p>
+    </div>
     <form id="loginForm" onsubmit="return doLogin()" autocomplete="on">
       <div class="mb-4">
         <label class="text-sm font-medium text-slate-600">用户名</label>
-        <input type="text" id="username" name="username" autocomplete="username" class="mt-1 w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none" placeholder="请输入用户名">
+        <div style="position:relative" class="mt-1">
+          <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#94a3b8;display:flex"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+          <input type="text" id="username" name="username" autocomplete="username" placeholder="请输入用户名" style="padding:11px 14px 11px 40px;width:100%;border:1px solid #e2e8f0;border-radius:12px;font-size:14px;background:#f8fafc;box-sizing:border-box">
+        </div>
       </div>
       <div class="mb-5">
         <label class="text-sm font-medium text-slate-600">密码</label>
-        <input type="password" id="password" name="password" autocomplete="current-password" class="mt-1 w-full border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none" placeholder="请输入密码">
+        <div style="position:relative" class="mt-1">
+          <span style="position:absolute;left:13px;top:50%;transform:translateY(-50%);color:#94a3b8;display:flex"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></span>
+          <input type="password" id="password" name="password" autocomplete="current-password" placeholder="请输入密码" style="padding:11px 14px 11px 40px;width:100%;border:1px solid #e2e8f0;border-radius:12px;font-size:14px;background:#f8fafc;box-sizing:border-box">
+        </div>
       </div>
-      <button type="submit" class="w-full py-2.5 rounded-xl text-white font-semibold text-sm cursor-pointer" style="background:linear-gradient(135deg,#2563eb,#4f46e5);box-shadow:0 4px 16px rgba(59,130,246,.4)">登 录</button>
+      <button type="submit" class="w-full py-3 rounded-xl text-white font-semibold text-sm cursor-pointer" style="background:linear-gradient(135deg,#2563eb,#4f46e5);box-shadow:0 8px 24px rgba(59,130,246,.45);border:none">登 录</button>
     </form>
-    <p class="text-center text-xs text-slate-400 mt-4">默认管理员：丁浩伦 / 123456</p>
+    <p class="text-center text-xs text-slate-400 mt-5">默认管理员：丁浩伦 / 123456</p>
     <p id="msg" class="text-center text-sm text-red-500 mt-2"></p>
   </div>
+  <p style="text-align:center;color:rgba(255,255,255,.55);font-size:12px;margin-top:16px">煤炭进销存 · 云端实时同步</p>
 </div>
 <script src="data.js"></script>
 <script>
