@@ -31,7 +31,7 @@ function doLogin(){
   const finish = function(users){
     const found = users.find(x => x.username===u && x.password===p);
     if(!found){ document.getElementById("msg").textContent="用户名或密码错误"; return false; }
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ username:found.username, name:found.name, role:found.role, site:found.site||"西华煤场" }));
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ username:found.username, name:found.name, role:found.role, site:found.site||"西华煤场", perms: found.perms||{} }));
     cloudPushUsers(users); // 登录成功，把当前用户表同步到云端
     location.href = "index.html";
     return false;
