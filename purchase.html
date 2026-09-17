@@ -268,6 +268,16 @@ function delPurchase(idx){
 }
 loadAllData();
 initPage("purchase.html");
+// 其他人员只能采购自己登录煤场的煤：非管理员锁定收货煤场为自己的煤场
+(function(){
+  const me = currentUser();
+  const sel = document.getElementById("purchaseTo");
+  if(me && me.role!=="admin" && sel){
+    const mySite = me.site || "";
+    sel.innerHTML = `<option value="${mySite}">${mySite}</option>`;
+    sel.disabled = true;
+  }
+})();
 // 只读用户隐藏新增表单
 if(!canEdit("purchase")){
   const w = document.getElementById("purchaseFormWrap");
