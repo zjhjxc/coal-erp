@@ -19,7 +19,7 @@
   <h3 class="text-lg font-bold mb-3">📤 新增销售出库</h3>
   <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
     <div>日期：<input type="date" id="saleDate" class="border p-1 w-full"></div>
-    <div>出货煤场：<input type="text" id="saleNo" class="border p-1 w-full"></div>
+    <div>出货煤场：<select id="saleNo" class="border p-1 w-full"><option value="西华煤场">西华煤场</option><option value="禹州煤场">禹州煤场</option><option value="告成煤场">告成煤场</option><option value="叶县煤场">叶县煤场</option></select></div>
     <div>购货单位：<input type="text" id="buyCompany" class="border p-1 w-full"></div>
     <div>出库矿点1：
       <select id="saleExMine1" class="border p-1 w-full" onchange="updateSaleCost();updateSaleTotal()"><option value="-1">请选择库存批次</option></select>
