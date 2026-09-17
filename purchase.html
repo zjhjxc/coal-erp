@@ -273,8 +273,10 @@ initPage("purchase.html");
   const me = currentUser();
   const sel = document.getElementById("purchaseTo");
   if(me && me.role!=="admin" && sel){
-    const mySite = me.site || "";
-    sel.innerHTML = `<option value="${mySite}">${mySite}</option>`;
+    const valid=["西华煤场","禹州煤场","告成煤场","叶县煤场"];
+    const raw = (SITE_MAP && SITE_MAP[me.site]) || me.site || "";
+    const finalSite = valid.indexOf(raw)>=0 ? raw : "西华煤场";
+    sel.innerHTML = `<option value="${finalSite}">${finalSite}</option>`;
     sel.disabled = true;
   }
 })();
