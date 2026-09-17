@@ -161,10 +161,14 @@ function requireLogin(){
   if(!u) { location.href = "login.html"; return null; }
   return u;
 }
-// 当前用户的场地
+// 当前场地：管理员可自由切换（coalViewSite 覆盖），普通人员固定在自己登录的煤场
 function currentSite(){
   const u = currentUser();
-  return (u && u.site) ? u.site : "西华煤场";
+  const valid=["西华煤场","禹州煤场","告成煤场","叶县煤场"];
+  const own = (u && u.site && valid.indexOf(u.site)>=0) ? u.site : "西华煤场";
+  if(u && u.role!=="admin") return own;
+  const ov = localStorage.getItem("coalViewSite");
+  return (ov && valid.indexOf(ov)>=0) ? ov : own;
 }
 
 // 登出
@@ -179,13 +183,23 @@ function renderUserBar(){
   if(!user) return;
   const bar = document.getElementById("userbar");
   if(!bar) return;
+  const sites = ["西华煤场","禹州煤场","告成煤场","叶县煤场"];
+  const curSite = currentSite();
   bar.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <span style="padding:5px 12px;border-radius:999px;background:#fff7e0;border:1px solid #e8c55c;color:#a67c00;font-size:13px;font-weight:600">🏭 ${user.site||"西华煤场"}</span>
+      <select id="siteSwitcher" onchange="switchSite(this.value)" style="padding:5px 10px;border-radius:999px;background:#fff7e0;border:1px solid #e8c55c;color:#a67c00;font-size:13px;font-weight:600;cursor:pointer">
+        ${sites.map(s=>`<option value="${s}" ${s===curSite?"selected":""} ${(user.role!=="admin" && s!==user.site)?"disabled":""}>🏭 ${s}</option>`).join("")}
+      </select>
       <span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#4a3a15;font-weight:600">${user.role==="admin"?"👑":"👤"} ${user.name||user.username}<span style="color:#b09a60;font-size:12px;font-weight:400">${user.role==="admin"?"管理员":"普通用户"}</span></span>
       ${user.role==="admin" ? `<a href="users.html" style="padding:6px 12px;border-radius:8px;background:#f7e7bd;color:#a67c00;font-size:13px;text-decoration:none;font-weight:600">用户管理</a>` : ""}
       <button onclick="logout()" style="padding:6px 14px;border-radius:8px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">退出</button>
     </div>`;
+}
+// 切换当前查看煤场（管理员可自由切换，普通人员锁定自己煤场）
+function switchSite(site){
+  if(!site) return;
+  localStorage.setItem("coalViewSite", site);
+  location.reload();
 }
 
 // ===== 金额取整 =====
