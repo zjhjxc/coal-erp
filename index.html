@@ -6,10 +6,13 @@
 <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="min-h-screen bg-gradient-to-br from-slate-100 via-gray-50 to-blue-50 p-4">
-<div class="flex justify-between items-center mb-4">
-  <div class="flex items-center gap-2">
-    <div class="w-9 h-9 rounded-lg bg-blue-600 text-white flex items-center justify-center shadow">📊</div>
-    <h1 class="text-2xl font-bold text-slate-800">煤炭进销存管理系统</h1>
+<div class="flex justify-between items-center mb-4 flex-wrap gap-2">
+  <div class="flex items-center gap-3">
+    <div style="width:46px;height:46px;border-radius:13px;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;box-shadow:0 4px 14px rgba(59,130,246,.35)">⛏️</div>
+    <div>
+      <h1 class="text-2xl font-extrabold" style="background:linear-gradient(135deg,#1e3a8a,#2563eb);-webkit-background-clip:text;background-clip:text;color:transparent">煤炭进销存管理系统</h1>
+      <div class="text-xs text-slate-400 mt-0.5">煤炭 · 仓储 · 财务 一体化管理</div>
+    </div>
   </div>
   <div id="userbar"></div>
 </div>
@@ -128,17 +131,17 @@ function renderBoard(){
   purchaseList.forEach(p=>{ if((p.no||"").indexOf("MIX-")===0){ mixInTon+=p.settle; mixInCost+=p.totalCostAll; } });
   const html = `
   <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
-    <div class="border border-slate-200 p-3 rounded-xl bg-white">期初库存：<b>${stockStartTon.toFixed(2)}</b>吨，金额${stockStartMoney}元</div>
-    <div class="border border-slate-200 p-3 rounded-xl bg-white">累计入库：<b>${stock.totalInTon.toFixed(2)}</b>吨，成本${stock.totalInMoney}元</div>
-    <div class="border border-slate-200 p-3 rounded-xl bg-white">累计出库：<b>${stock.totalOutTon.toFixed(2)}</b>吨，金额${saleCost}元</div>
-    <div class="border border-slate-200 p-3 rounded-xl bg-white">当前库存：<b>${stock.stockRemainTon.toFixed(2)}</b>吨，金额${stock.stockRemainMoney}元</div>
-    <div class="border border-slate-200 p-3 rounded-xl bg-white">库存加权单价：${stock.avgCostPrice.toFixed(2)}元/吨</div>
-    <div class="border border-slate-200 p-3 rounded-xl bg-white">总销售收入：${saleIncome}元，总销售吨位：<b>${saleTon.toFixed(2)}</b>吨，总毛利：${profit}元</div>
-    <div class="border border-slate-200 p-3 rounded-xl bg-emerald-50">⚗️ 配煤入库：<b>${mixInTon.toFixed(2)}</b>吨，成本${roundInt(mixInCost)}元</div>
-    <div class="border border-slate-200 p-3 rounded-xl bg-yellow-50">💵煤款：应付${fin.coalNeed}，已付${fin.coalPaid}，欠款${fin.coalArrears}元</div>
-    <div class="border border-slate-200 p-3 rounded-xl bg-yellow-50">🚚运费：应付${fin.freightNeed}，已付${fin.freightPaid}，欠款${fin.freightArrears}元</div>
-    <div class="border border-slate-200 p-3 rounded-xl bg-yellow-50">🤝居间费：应付${fin.brokerNeed}，已付${fin.brokerPaid}，欠款${fin.brokerArrears}元</div>
-    <div class="border border-slate-200 p-3 rounded-xl bg-yellow-50">🧾累计进项税额：${fin.taxSum}元</div>
+    <div class="stat stat-blue"><div class="stat-label">期初库存</div><div class="stat-val"><b>${stockStartTon.toFixed(2)}</b><span>吨</span></div><div class="stat-sub">${stockStartMoney}元</div></div>
+    <div class="stat stat-cyan"><div class="stat-label">累计入库</div><div class="stat-val"><b>${stock.totalInTon.toFixed(2)}</b><span>吨</span></div><div class="stat-sub">成本 ${stock.totalInMoney}元</div></div>
+    <div class="stat stat-violet"><div class="stat-label">累计出库</div><div class="stat-val"><b>${stock.totalOutTon.toFixed(2)}</b><span>吨</span></div><div class="stat-sub">金额 ${saleCost}元</div></div>
+    <div class="stat stat-green"><div class="stat-label">当前库存</div><div class="stat-val"><b>${stock.stockRemainTon.toFixed(2)}</b><span>吨</span></div><div class="stat-sub">金额 ${stock.stockRemainMoney}元</div></div>
+    <div class="stat stat-slate"><div class="stat-label">库存加权单价</div><div class="stat-val"><b>${stock.avgCostPrice.toFixed(2)}</b><span>元/吨</span></div></div>
+    <div class="stat stat-amber"><div class="stat-label">总销售收入</div><div class="stat-val"><b>${saleIncome}</b><span>元</span></div><div class="stat-sub">吨位 ${saleTon.toFixed(2)}吨 · 毛利 ${profit}元</div></div>
+    <div class="stat stat-emerald"><div class="stat-label">配煤入库</div><div class="stat-val"><b>${mixInTon.toFixed(2)}</b><span>吨</span></div><div class="stat-sub">成本 ${roundInt(mixInCost)}元</div></div>
+    <div class="stat stat-amber"><div class="stat-label">煤款</div><div class="stat-val"><b>${fin.coalNeed}</b><span>应付</span></div><div class="stat-sub">已付 ${fin.coalPaid} · 欠款 ${fin.coalArrears}元</div></div>
+    <div class="stat stat-cyan"><div class="stat-label">运费</div><div class="stat-val"><b>${fin.freightNeed}</b><span>应付</span></div><div class="stat-sub">已付 ${fin.freightPaid} · 欠款 ${fin.freightArrears}元</div></div>
+    <div class="stat stat-violet"><div class="stat-label">居间费</div><div class="stat-val"><b>${fin.brokerNeed}</b><span>应付</span></div><div class="stat-sub">已付 ${fin.brokerPaid} · 欠款 ${fin.brokerArrears}元</div></div>
+    <div class="stat stat-red"><div class="stat-label">累计进项税额</div><div class="stat-val"><b>${fin.taxSum}</b><span>元</span></div></div>
   </div>`;
   document.getElementById("boardHtml").innerHTML = html;
 
