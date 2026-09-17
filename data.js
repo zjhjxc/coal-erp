@@ -7,6 +7,51 @@ let mixSelectedList = [];
 let stockStartTon = 0;
 let stockStartMoney = 0;
 
+// ================== 全局界面美化（自动作用于所有页面） ==================
+(function(){
+  if(typeof document!=="undefined" && document.getElementById){
+    if(!document.getElementById("coalGlobalStyle")){
+      var st=document.createElement("style");
+      st.id="coalGlobalStyle";
+      st.textContent=[
+        '*{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}',
+        'body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif}',
+        '.bg-white{border-radius:1rem;transition:box-shadow .25s ease,transform .2s ease,border-color .25s ease}',
+        '.bg-white:hover{box-shadow:0 12px 32px rgba(15,23,42,.09)}',
+        'table thead tr{background:linear-gradient(180deg,#eef2f7,#e0e7ef)!important}',
+        'table thead th{color:#0f172a!important;font-weight:600;letter-spacing:.02em}',
+        'table tbody tr{transition:background .15s ease}',
+        'table tbody tr:hover{background:#f0f5fb!important}',
+        'button{transition:filter .15s,transform .1s,box-shadow .15s}',
+        'button:hover{filter:brightness(1.07)}',
+        'button:active{transform:translateY(1px)}',
+        'input,select,textarea{transition:border-color .2s,box-shadow .2s}',
+        'input:focus,select:focus,textarea:focus{border-color:#3b82f6!important;box-shadow:0 0 0 3px rgba(59,130,246,.15)!important;outline:none}',
+        '.overflow-x-auto{border-radius:12px}',
+        '::-webkit-scrollbar{width:8px;height:8px}',
+        '::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:8px}',
+        '::-webkit-scrollbar-track{background:transparent}',
+        '.stat{border-radius:14px;padding:14px 16px;color:#fff;position:relative;overflow:hidden}',
+        '.stat::after{content:"";position:absolute;right:-20px;top:-20px;width:70px;height:70px;background:rgba(255,255,255,.12);border-radius:50%}',
+        '.stat-blue{background:linear-gradient(135deg,#3b82f6,#2563eb)}',
+        '.stat-cyan{background:linear-gradient(135deg,#06b6d4,#0891b2)}',
+        '.stat-green{background:linear-gradient(135deg,#10b981,#059669)}',
+        '.stat-emerald{background:linear-gradient(135deg,#34d399,#0d9488)}',
+        '.stat-amber{background:linear-gradient(135deg,#f59e0b,#d97706)}',
+        '.stat-red{background:linear-gradient(135deg,#ef4444,#dc2626)}',
+        '.stat-violet{background:linear-gradient(135deg,#8b5cf6,#6d28d9)}',
+        '.stat-slate{background:linear-gradient(135deg,#64748b,#475569)}',
+        '.stat-label{font-size:12px;opacity:.85;font-weight:500}',
+        '.stat-val{font-size:20px;font-weight:700;margin:3px 0;line-height:1.2}',
+        '.stat-val span{font-size:12px;font-weight:400;opacity:.85;margin-left:2px}',
+        '.stat-sub{font-size:12px;opacity:.9}'
+      ].join("\n");
+      if(document.head) document.head.appendChild(st);
+      else document.documentElement.appendChild(st);
+    }
+  }
+})();
+
 // ================== 用户与登录 ==================
 const USERS_KEY = "coalUsers";
 const SESSION_KEY = "coalSession";
@@ -129,10 +174,12 @@ function renderUserBar(){
   const bar = document.getElementById("userbar");
   if(!bar) return;
   bar.innerHTML = `
-    <span class="px-3 py-1 rounded-full bg-white shadow-sm text-sm mr-2">🏭 ${user.site||"西华煤场"}</span>
-    <span class="mr-2 text-sm">👤 ${user.name||user.username}（${user.role==="admin"?"管理员":"普通用户"}）</span>
-    ${user.role==="admin" ? `<a href="users.html" class="mr-2 px-3 py-1 rounded-lg bg-blue-100 text-blue-700 text-sm hover:bg-blue-200">用户管理</a>` : ""}
-    <button onclick="logout()" class="px-3 py-1 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600">退出</button>`;
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span style="padding:5px 12px;border-radius:999px;background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;font-size:13px;font-weight:600">🏭 ${user.site||"西华煤场"}</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#334155;font-weight:600">${user.role==="admin"?"👑":"👤"} ${user.name||user.username}<span style="color:#94a3b8;font-size:12px;font-weight:400">${user.role==="admin"?"管理员":"普通用户"}</span></span>
+      ${user.role==="admin" ? `<a href="users.html" style="padding:6px 12px;border-radius:8px;background:#dbeafe;color:#1d4ed8;font-size:13px;text-decoration:none;font-weight:600">用户管理</a>` : ""}
+      <button onclick="logout()" style="padding:6px 14px;border-radius:8px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">退出</button>
+    </div>`;
 }
 
 // ===== 金额取整 =====
@@ -350,15 +397,14 @@ function renderNav(active){
   };
   // 模块 key 与页面文件名对应
   const pageModule = { "purchase.html":"purchase","inventory.html":"inventory","sale.html":"sale","mix.html":"mix","finance.html":"finance","export.html":"export" };
-  nav.innerHTML = Object.keys(map).map(href=>{
+  const pills = Object.keys(map).map(href=>{
     const mod = pageModule[href];
     if(mod && !canAccess(mod)) return ""; // 无权限的模块不显示
     const label = map[href];
-    const on = href === active
-      ? "background:#2563eb;color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.35)"
-      : "background:#fff;color:#334155;";
-    return `<a href="${href}" style="display:inline-block;padding:8px 16px;margin:0 4px;border-radius:10px;${on};text-decoration:none;font-size:14px;font-weight:500;border:1px solid ${href===active?'#2563eb':'#e2e8f0'};transition:all .15s;" onmouseover="this.style.background='${href===active?'#2563eb':'#eff6ff'}';this.style.color='${href===active?'#fff':'#2563eb'}'" onmouseout="this.style.background='${href===active?'#2563eb':'#fff'}';this.style.color='${href===active?'#fff':'#334155'}'">${label}</a>`;
+    const on = href === active;
+    return `<a href="${href}" style="display:inline-block;padding:9px 15px;margin:0 3px;border-radius:11px;text-decoration:none;font-size:14px;font-weight:600;${on?'background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;box-shadow:0 3px 12px rgba(59,130,246,.35)':'background:#f1f5f9;color:#475569'};transition:all .18s;" onmouseover="this.style.background='${on?'linear-gradient(135deg,#2563eb,#4f46e5)':'#dbeafe'}';this.style.color='${on?'#fff':'#1d4ed8'}'" onmouseout="this.style.background='${on?'linear-gradient(135deg,#2563eb,#4f46e5)':'#f1f5f9'}';this.style.color='${on?'#fff':'#475569'}'">${label}</a>`;
   }).join("");
+  nav.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px;background:#fff;padding:9px;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 2px 12px rgba(0,0,0,.04)">${pills}</div>`;
 }
 
 // 页面统一初始化：校验登录 + 模块权限 + 渲染用户条 + 导航
