@@ -19,7 +19,7 @@
   <h3 class="text-lg font-bold mb-3">📤 新增销售出库</h3>
   <div class="grid grid-cols-2 md:grid-cols-3 gap-3 mb-3">
     <div>日期：<input type="date" id="saleDate" class="border p-1 w-full"></div>
-    <div>出货煤场：<select id="saleNo" class="border p-1 w-full"><option value="西华煤场">西华煤场</option><option value="禹州煤场">禹州煤场</option><option value="告成煤场">告成煤场</option><option value="叶县煤场">叶县煤场</option></select></div>
+    <div>出货煤场：<select id="saleNo" class="border p-1 w-full" onchange="onShipSiteChange()"><option value="西华煤场">西华煤场</option><option value="禹州煤场">禹州煤场</option><option value="告成煤场">告成煤场</option><option value="叶县煤场">叶县煤场</option></select></div>
     <div>购货单位：<input type="text" id="buyCompany" class="border p-1 w-full"></div>
     <div>出库矿点1：
       <select id="saleExMine1" class="border p-1 w-full" onchange="updateSaleCost();updateSaleTotal()"><option value="-1">请选择库存批次</option></select>
@@ -193,18 +193,28 @@ function renderSaleTable(){
     </tr>`;
   });
 }
-// 出库矿点下拉 = 库存批次（有剩余库存的来源矿点）
+// 出库矿点下拉 = 当前出货煤场下的库存批次（各煤场只能出各自煤场的煤）
 function fillExMineOptions(){
+  const site = (document.getElementById("saleNo")||{}).value || "";
   ["saleExMine1","saleExMine2"].forEach(selId=>{
     const sel=document.getElementById(selId); if(!sel) return;
     const keep = sel.value || "-1";
     sel.innerHTML = `<option value="-1">请选择库存批次</option>`;
     purchaseList.forEach((p,i)=>{
       const st=(p.stockRemain ?? p.settle)||0;
-      if(st>0.001) sel.innerHTML += `<option value="${i}">${p.from||""}（库存 ${st.toFixed(2)} 吨）</option>`;
+      if(st<=0.001) return;
+      const pSite = p.purchaseTo || "";
+      if(pSite!==site) return; // 只显示本煤场的库存批次
+      sel.innerHTML += `<option value="${i}">${p.from||""}（库存 ${st.toFixed(2)} 吨）</option>`;
     });
     if(sel.querySelector(`option[value="${keep}"]`)) sel.value=keep;
   });
+}
+// 切换出货煤场 → 重新按煤场过滤出库矿点
+function onShipSiteChange(){
+  fillExMineOptions();
+  if(typeof updateSaleCost==="function") updateSaleCost();
+  if(typeof updateSaleTotal==="function") updateSaleTotal();
 }
 function delSale(idx){
   if(!confirm("确认删除？库存将恢复")) return;
