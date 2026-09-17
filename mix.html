@@ -15,15 +15,15 @@
 </div>
 <div id="nav" class="mb-4"></div>
 
-<div class="p-4 border rounded bg-gray-50">
+<div class="bg-white rounded-2xl p-4">
   <div class="flex gap-2 mb-3 flex-wrap" id="mixActions">
-    <button onclick="loadPurchaseToCoalMix()" class="px-3 py-2 bg-indigo-500 text-white rounded">加载采购原料</button>
-    <button onclick="calcMixCoal()" class="px-3 py-2 bg-green-500 text-white rounded">计算配煤指标</button>
-    <button onclick="saveMixPlan()" class="px-3 py-2 bg-sky-500 text-white rounded">保存配煤方案（自动入库）</button>
+    <button onclick="loadPurchaseToCoalMix()" class="px-3 py-2 bg-blue-600 text-white rounded">加载采购原料</button>
+    <button onclick="calcMixCoal()" class="px-3 py-2 bg-blue-600 text-white rounded">计算配煤指标</button>
+    <button onclick="saveMixPlan()" class="px-3 py-2 bg-blue-600 text-white rounded">保存配煤方案（自动入库）</button>
     <button onclick="clearMixTable()" class="px-3 py-2 bg-red-500 text-white rounded">清空</button>
   </div>
 
-  <div class="border p-3 rounded bg-white mb-3 max-h-60 overflow-auto">
+  <div class="bg-white rounded-xl p-3 mb-3 max-h-60 overflow-auto">
     <h4 class="font-semibold mb-2">可选采购原料（勾选，填写本次使用吨位）</h4>
     <table class="w-full text-sm">
       <thead><tr>
@@ -34,7 +34,7 @@
     </table>
   </div>
 
-  <div class="border p-3 rounded bg-white mb-3">
+  <div class="bg-white rounded-xl p-3 mb-3">
     <h4 class="font-semibold mb-2">✅ 配煤加权结果</h4>
     <p>配煤成品名称：<input type="text" id="mixProductName" value="场地配煤" class="border p-1"></p>
     <p>配煤总重量：<span id="mixTotalTon">0.00</span> 吨</p>
@@ -43,7 +43,7 @@
     <p>加权热值：<span id="mixHeat">0</span> 大卡</p>
   </div>
 
-  <div class="border p-3 rounded bg-white">
+  <div class="bg-white rounded-xl p-3">
     <h4 class="font-semibold mb-2">📜 已保存配煤方案</h4>
     <table class="w-full text-sm">
       <thead><tr><th>序号</th><th>配煤总吨</th><th>全水</th><th>全硫</th><th>空干挥发</th><th>收到挥发</th><th>灰份</th><th>热值</th><th>原料明细</th><th>操作</th></tr></thead>
