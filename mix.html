@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>场地配煤 - 煤炭进销存</title>
+<script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="p-4 bg-gray-100">
+<div class="flex justify-between items-center mb-4">
+  <h1 class="text-xl font-bold">场地配煤</h1>
+  <div id="userbar"></div>
+</div>
+<div id="nav" class="mb-4"></div>
+
+<div class="p-4 border rounded bg-gray-50">
+  <div class="flex gap-2 mb-3 flex-wrap" id="mixActions">
+    <button onclick="loadPurchaseToCoalMix()" class="px-3 py-2 bg-indigo-500 text-white rounded">加载采购原料</button>
+    <button onclick="calcMixCoal()" class="px-3 py-2 bg-green-500 text-white rounded">计算配煤指标</button>
+    <button onclick="saveMixPlan()" class="px-3 py-2 bg-sky-500 text-white rounded">保存配煤方案（自动入库）</button>
+    <button onclick="clearMixTable()" class="px-3 py-2 bg-red-500 text-white rounded">清空</button>
+  </div>
+
+  <div class="border p-3 rounded bg-white mb-3 max-h-60 overflow-auto">
+    <h4 class="font-semibold mb-2">可选采购原料（勾选，填写本次使用吨位）</h4>
+    <table class="w-full text-sm">
+      <thead><tr>
+        <th>选择</th><th>来源矿点</th><th>原进厂吨位</th><th>库存</th><th>本次使用吨位</th>
+        <th>全水Mt</th><th>全硫St</th><th>空干挥发</th><th>收到挥发</th><th>灰份</th><th>热值</th>
+      </tr></thead>
+      <tbody id="mixSourceTable"></tbody>
+    </table>
+  </div>
+
+  <div class="border p-3 rounded bg-white mb-3">
+    <h4 class="font-semibold mb-2">✅ 配煤加权结果</h4>
+    <p>配煤成品名称：<input type="text" id="mixProductName" value="场地配煤" class="border p-1"></p>
+    <p>配煤总重量：<span id="mixTotalTon">0.00</span> 吨</p>
+    <p>加权全水：<span id="mixMt">0.00</span>% | 全硫：<span id="mixSt">0.00</span>%</p>
+    <p>空干挥发：<span id="mixAdVola">0.00</span>% | 收到挥发：<span id="mixArVola">0.00</span>% | 灰份：<span id="mixAsh">0.00</span>%</p>
+    <p>加权热值：<span id="mixHeat">0</span> 大卡</p>
+  </div>
+
+  <div class="border p-3 rounded bg-white">
+    <h4 class="font-semibold mb-2">📜 已保存配煤方案</h4>
+    <table class="w-full text-sm">
+      <thead><tr><th>序号</th><th>配煤总吨</th><th>全水</th><th>全硫</th><th>空干挥发</th><th>收到挥发</th><th>灰份</th><th>热值</th><th>原料明细</th><th>操作</th></tr></thead>
+      <tbody id="mixRecordTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+function loadPurchaseToCoalMix(){
+  const tb=document.getElementById("mixSourceTable");
+  tb.innerHTML="";
+  purchaseList.forEach((p,idx)=>{
+    if(p.settle<=0) return;
+    const stock = (p.stockRemain ?? p.settle)||0;
+    if(stock<=0.001) return; // 库存为0的原料自动隐藏
+    tb.innerHTML += `<tr>
+      <td><input type="checkbox" data-idx="${idx}" class="mix-check"></td>
+      <td>${p.from||""}</td><td>${p.settle.toFixed(2)}</td>
+      <td>${(p.stockRemain ?? p.settle).toFixed(2)}</td>
+      <td><input type="number" step="0.01" min="0" max="${(p.stockRemain ?? p.settle).toFixed(2)}" value="${(p.stockRemain ?? p.settle).toFixed(2)}"
+        data-idx="${idx}" class="mix-weight-input w-20 border p-1"></td>
+      <td>${p.totalWater}</td><td>${p.sulfur}</td><td>${p.adVola??0}</td><td>${p.arVola}</td><td>${p.ash??0}</td><td>${p.heat}</td>
+    </tr>`;
+  });
+  setTimeout(()=>{
+    document.querySelectorAll(".mix-weight-input").forEach(input=>{
+      input.onblur=function(){
+        const idx=Number(this.dataset.idx), p=purchaseList[idx];
+        let v=parseFloat(this.value)||0;
+        if(v>p.settle){ alert(`不能超过进货吨位 ${p.settle.toFixed(2)}吨`); this.value=p.settle.toFixed(2); }
+        if(v<0) this.value=0;
+      };
+    });
+  },100);
+}
+function calcMixCoal(){
+  const boxes=document.querySelectorAll(".mix-check:checked");
+  mixSelectedList=[];
+  let totalTon=0,sumMt=0,sumSt=0,sumAdV=0,sumArV=0,sumAsh=0,sumHeat=0;
+  boxes.forEach(cb=>{
+    const idx=Number(cb.dataset.idx), item=purchaseList[idx];
+    const input=document.querySelector(`.mix-weight-input[data-idx="${idx}"]`);
+    let useW=parseFloat(input.value)||0;
+    const stock=(item.stockRemain ?? item.settle)||0;
+    if(useW>stock){ alert(`来源${item.from||''}使用重量不能超过库存 ${stock.toFixed(2)}吨`); useW=stock; }
+    if(useW<0) useW=0;
+    mixSelectedList.push({source:item, useTon:useW});
+    totalTon+=useW; sumMt+=item.totalWater*useW; sumSt+=item.sulfur*useW;
+    sumAdV+=(item.adVola||0)*useW; sumArV+=item.arVola*useW; sumAsh+=(item.ash||0)*useW; sumHeat+=item.heat*useW;
+  });
+  document.getElementById("mixTotalTon").innerText=totalTon.toFixed(2);
+  document.getElementById("mixMt").innerText=totalTon>0?(sumMt/totalTon).toFixed(2):'0.00';
+  document.getElementById("mixSt").innerText=totalTon>0?(sumSt/totalTon).toFixed(2):'0.00';
+  document.getElementById("mixAdVola").innerText=totalTon>0?(sumAdV/totalTon).toFixed(2):'0.00';
+  document.getElementById("mixArVola").innerText=totalTon>0?(sumArV/totalTon).toFixed(2):'0.00';
+  document.getElementById("mixAsh").innerText=totalTon>0?(sumAsh/totalTon).toFixed(2):'0.00';
+  document.getElementById("mixHeat").innerText=totalTon>0?roundInt(sumHeat/totalTon):0;
+}
+function saveMixPlan(){
+  const totalTon=parseFloat(document.getElementById("mixTotalTon").innerText);
+  if(totalTon<=0){ alert("请先勾选原料并计算配煤！"); return; }
+  coalMixRecordList.push({
+    totalTon, mt:parseFloat(document.getElementById("mixMt").innerText),
+    st:parseFloat(document.getElementById("mixSt").innerText),
+    adVola:parseFloat(document.getElementById("mixAdVola").innerText),
+    arVola:parseFloat(document.getElementById("mixArVola").innerText),
+    ash:parseFloat(document.getElementById("mixAsh").innerText),
+    heat:parseFloat(document.getElementById("mixHeat").innerText),
+    sourceList:mixSelectedList
+  });
+  saveAllData(); renderMixRecordTable();
+  mixStockIn(); // 自动入库：减去原料重量与金额，加入新配煤成品成本
+}
+function renderMixRecordTable(){
+  const tb=document.getElementById("mixRecordTable");
+  tb.innerHTML="";
+  coalMixRecordList.forEach((it,i)=>{
+    let src="";
+    it.sourceList.forEach(s=>{ src+=`${s.source.from||""}:${s.useTon.toFixed(2)}吨;`; });
+    tb.innerHTML+=`<tr><td>${i+1}</td><td>${it.totalTon.toFixed(2)}</td><td>${it.mt.toFixed(2)}</td>
+      <td>${it.st.toFixed(2)}</td><td>${it.adVola.toFixed(2)}</td><td>${it.arVola.toFixed(2)}</td>
+      <td>${(it.ash||0).toFixed(2)}</td><td>${it.heat}</td><td>${src}</td>
+      <td>${canDelete() ? `<button onclick="delMixRecord(${i})" class="px-2 py-1 rounded-md bg-red-500 text-white text-xs hover:bg-red-600 transition">删除</button>` : ""}</td></tr>`;
+  });
+}
+function delMixRecord(idx){
+  if(!confirm("确认删除该配煤方案？将恢复原料库存并删除对应配煤成品")) return;
+  const it = coalMixRecordList[idx];
+  if(it){
+    // 1. 回滚原料库存
+    (it.sourceList||[]).forEach(s=>{
+      const src = findSrcForMix(s);
+      if(src){ src.stockRemain = Math.min(src.settle||0, ((src.stockRemain ?? src.settle)||0) + (s.useTon||0)); }
+    });
+    // 2. 删除对应配煤成品
+    let delIdx = -1;
+    if(it.outNo){ delIdx = purchaseList.findIndex(p=>p.no===it.outNo); }
+    else {
+      let cnt=0;
+      purchaseList.forEach((p,i)=>{ if((p.no||"").indexOf("MIX-")===0){ if(cnt===idx) delIdx=i; cnt++; } });
+    }
+    if(delIdx>=0) purchaseList.splice(delIdx,1);
+    // 3. 修正销售记录的批次索引（指向被删成品的置-1，之后的减1）
+    saleList.forEach(r=>{
+      if(r.saleBatchIdx1===delIdx) r.saleBatchIdx1=-1; else if(r.saleBatchIdx1>delIdx) r.saleBatchIdx1--;
+      if(r.saleBatchIdx2===delIdx) r.saleBatchIdx2=-1; else if(r.saleBatchIdx2>delIdx) r.saleBatchIdx2--;
+    });
+  }
+  coalMixRecordList.splice(idx,1);
+  saveAllData();
+  renderMixRecordTable();
+  const f=document.getElementById("mixSourceTable");
+  if(f) loadPurchaseToCoalMix();
+}
+function mixStockIn(){
+  const totalTon=parseFloat(document.getElementById("mixTotalTon").innerText);
+  const productName=document.getElementById("mixProductName").value.trim()||"场地配煤";
+  if(totalTon<=0){ alert("先计算配煤才能入库！"); return; }
+  let totalMixCost=0;
+  mixSelectedList.forEach(rec=>{
+    const src=rec.source;
+    totalMixCost += (src.totalCostAll/(src.settle||1))*rec.useTon;
+    src.stockRemain = ((src.stockRemain ?? src.settle) - rec.useTon); if(src.stockRemain<0) src.stockRemain=0;
+  });
+  totalMixCost=roundInt(totalMixCost);
+  const mixNo="MIX-"+Date.now();
+  const mt=parseFloat(document.getElementById("mixMt").innerText),
+        st=parseFloat(document.getElementById("mixSt").innerText),
+        adVola=parseFloat(document.getElementById("mixAdVola").innerText),
+        arVola=parseFloat(document.getElementById("mixArVola").innerText),
+        ash=parseFloat(document.getElementById("mixAsh").innerText)||0,
+        heat=parseFloat(document.getElementById("mixHeat").innerText);
+  purchaseList.push({
+    date:new Date().toLocaleDateString(), no:mixNo, from:productName, to:"本场地", car:"", driver:"",
+    orig:totalTon, settle:totalTon, stockRemain:totalTon, diff:0, totalWater:mt, sulfur:st, adVola, arVola, ash, heat,
+    coalUnitPrice: 0, coalTotalMoney:0, freightTotal:0, brokerAmount:0,
+    totalCostAll:totalMixCost, tonCostAll:totalMixCost/totalTon,
+    coalPayStatus:"已付清", coalPaidMoney:0, coalPayRemark:"配煤成品(财务煤款记0)",
+    freightSettleStatus:"已结清", freightPaidMoney:0, freightRemark:"",
+    taxInvoiceStatus:"", taxAmount:0, taxRemark:"",
+    brokerSettleStatus:"已结清", brokerPaidMoney:0, brokerPayRemark:"配煤无居间"
+  });
+  // 记录成品单号到配煤方案，供追溯重算使用
+  if(coalMixRecordList.length) coalMixRecordList[coalMixRecordList.length-1].outNo = mixNo;
+  saveAllData();
+  document.getElementById("mixProductName").value="场地配煤";
+  renderMixRecordTable();
+  alert(`配煤方案已保存并自动入库！成品：${productName}，${totalTon.toFixed(2)}吨`);
+}
+function clearMixTable(){
+  document.getElementById("mixSourceTable").innerHTML="";
+  mixSelectedList=[];
+  ["mixTotalTon","mixMt","mixSt","mixAdVola","mixArVola","mixHeat"].forEach(i=>document.getElementById(i).innerText="0.00");
+  document.getElementById("mixHeat").innerText="0";
+}
+loadAllData();
+initPage("mix.html");
+// 只读用户隐藏配煤操作按钮
+if(!canEdit("mix")){
+  const a = document.getElementById("mixActions");
+  if(a) a.innerHTML = `<div class="text-sm text-gray-500 p-2">当前账号为只读权限，仅可查看已保存配煤方案。</div>`;
+}
+renderMixRecordTable();
+onCloudReady(renderMixRecordTable); // 云端数据同步后自动重渲染配煤记录
+</script>
+</body>
+</html>
