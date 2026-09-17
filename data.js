@@ -18,6 +18,7 @@ let stockStartMoney = 0;
         'body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif}',
         '.bg-white.rounded-2xl{background:linear-gradient(180deg,#ffffff,#fcfaf3);box-shadow:0 1px 3px rgba(90,60,10,.06),0 10px 26px rgba(90,60,10,.10);transition:box-shadow .25s,transform .2s;border:1px solid rgba(201,154,46,.16)!important}',
         '.bg-white.rounded-2xl:hover{box-shadow:0 4px 8px rgba(90,60,10,.08),0 24px 50px rgba(90,60,10,.16);transform:translateY(-3px)}',
+        '.bg-white.rounded-xl{box-shadow:0 3px 12px rgba(90,60,10,.09),inset 0 1px 0 rgba(255,255,255,.65)}',
         'table thead tr{background:linear-gradient(180deg,#f7f0dd,#ece0c0)!important}',
         'table thead th{color:#5a4520!important;font-weight:600;letter-spacing:.02em}',
         'table tbody tr{transition:background .15s ease}',
