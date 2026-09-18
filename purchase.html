@@ -268,14 +268,14 @@ function delPurchase(idx){
 }
 loadAllData();
 initPage("purchase.html");
-// 其他人员只能采购自己登录煤场的煤：非管理员锁定收货煤场为自己的煤场
+// 普通人员只能采购当前所在煤场的煤：非管理员把收货煤场锁定为当前煤场（随右上角煤场切换而变化）
 (function(){
   const me = currentUser();
   const sel = document.getElementById("purchaseTo");
   if(me && me.role!=="admin" && sel){
     const valid=["西华煤场","禹州煤场","告成煤场","叶县煤场"];
-    const raw = (SITE_MAP && SITE_MAP[me.site]) || me.site || "";
-    const finalSite = valid.indexOf(raw)>=0 ? raw : "西华煤场";
+    const cur = currentSite();
+    const finalSite = valid.indexOf(cur)>=0 ? cur : "西华煤场";
     sel.innerHTML = `<option value="${finalSite}">${finalSite}</option>`;
     sel.disabled = true;
   }
