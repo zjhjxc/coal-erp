@@ -432,13 +432,14 @@ function renderNav(active){
   const pills = Object.keys(map).map(href=>{
     const mod = pageModule[href];
     if(mod && !canAccess(mod)) return ""; // 无权限的模块不显示
-    const label = map[href][0], main=map[href][1], light=map[href][2], dark=map[href][3], offBg=map[href][4];
+    const label = map[href][0], main=map[href][1], light=map[href][2], dark=map[href][3];
     const on = href === active;
     const onBg = `linear-gradient(135deg,${light},${main} 50%,${dark})`;
-    const onShadow = `inset 0 3px 0 rgba(255,255,255,.95), inset 0 -4px 0 rgba(0,0,0,.30), 0 8px 16px ${main}66`;
-    const offShadow = "inset 0 1px 0 rgba(255,255,255,.8), inset 0 -2px 0 rgba(90,60,10,.16), 0 2px 4px rgba(90,60,10,.12)";
-    const color = on ? "#ffffff" : dark;
-    const textShadow = on ? "0 1px 1px rgba(0,0,0,.25)" : "none";
+    const offBg = main; // 未选中也使用各功能主色作为底色
+    const onShadow = `inset 0 3px 0 rgba(255,255,255,.95), inset 0 -4px 0 rgba(0,0,0,.32), 0 8px 16px ${main}66`;
+    const offShadow = "inset 0 2px 0 rgba(255,255,255,.45), inset 0 -3px 0 rgba(0,0,0,.22), 0 3px 8px rgba(0,0,0,.20)";
+    const color = "#ffffff";
+    const textShadow = on ? "0 1px 2px rgba(0,0,0,.5)" : "0 1px 2px rgba(0,0,0,.4)";
     return `<a href="${href}" style="display:inline-block;padding:10px 16px;margin:0 3px;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;background:${on?onBg:offBg};color:${color};text-shadow:${textShadow};box-shadow:${on?onShadow:offShadow};transition:all .18s;" onmouseover="this.style.background='${onBg}';this.style.color='#ffffff';this.style.textShadow='0 1px 1px rgba(0,0,0,.25)'" onmouseout="this.style.background='${on?onBg:offBg}';this.style.color='${color}';this.style.textShadow='${textShadow}'">${label}</a>`;
   }).join("");
   nav.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px;background:linear-gradient(180deg,#ffffff,#fbf3de);padding:11px;border-radius:16px;border:1px solid rgba(201,154,46,.30);box-shadow:0 2px 4px rgba(90,60,10,.08),inset 0 1px 0 rgba(255,255,255,.9),0 12px 28px rgba(90,60,10,.16)">${pills}</div>`;
