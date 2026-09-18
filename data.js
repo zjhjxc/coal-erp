@@ -434,10 +434,10 @@ function renderNav(active){
     if(mod && !canAccess(mod)) return ""; // 无权限的模块不显示
     const label = map[href][0], main=map[href][1], light=map[href][2], dark=map[href][3];
     const on = href === active;
-    const onBg = `linear-gradient(160deg,${light},${main} 65%)`; // 选中项也是鲜艳主色底（不含暗端）
-    const offBg = main; // 未选中使用各功能主色作为底色
+    const onBg = `linear-gradient(180deg,${light},${main} 45%,${dark})`; // 选中：浅→深强渐变，立体凸起
+    const offBg = `linear-gradient(180deg,${light},${main} 58%,${dark})`; // 未选中：浅→深渐变
     const onShadow = `inset 0 3px 0 rgba(255,255,255,.95), inset 0 -4px 0 rgba(0,0,0,.32), 0 8px 16px ${main}66`;
-    const offShadow = "inset 0 2px 0 rgba(255,255,255,.45), inset 0 -3px 0 rgba(0,0,0,.22), 0 3px 8px rgba(0,0,0,.20)";
+    const offShadow = "inset 0 2px 0 rgba(255,255,255,.55), inset 0 -3px 0 rgba(0,0,0,.26), 0 4px 9px rgba(0,0,0,.22)";
     const color = "#ffffff";
     const textShadow = on ? "0 1px 2px rgba(0,0,0,.5)" : "0 1px 2px rgba(0,0,0,.4)";
     return `<a href="${href}" style="display:inline-block;padding:10px 16px;margin:0 3px;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;background:${on?onBg:offBg};color:${color};text-shadow:${textShadow};box-shadow:${on?onShadow:offShadow};transition:all .18s;" onmouseover="this.style.background='${onBg}';this.style.color='#ffffff';this.style.textShadow='0 1px 1px rgba(0,0,0,.25)'" onmouseout="this.style.background='${on?onBg:offBg}';this.style.color='${color}';this.style.textShadow='${textShadow}'">${label}</a>`;
@@ -514,6 +514,19 @@ function initPage(active){
     if(btn.__btn3d) return;
     btn.__btn3d=true;
     var st=btn.style;
+    // 颜色由浅入深：读取按钮当前底色，生成"顶部浅→中部主色→底部深"渐变立体
+    try{
+      var cs=getComputedStyle(btn);
+      var rgb=cs.backgroundColor||"";
+      var m=rgb.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      var solid = rgb && !/^rgba\(0, ?0, ?0, ?0\)/.test(rgb);
+      if(m && solid){
+        var r=+m[1],g=+m[2],b=+m[3];
+        var lr=Math.min(255,r+80),lg=Math.min(255,g+80),lb=Math.min(255,b+80);
+        var dr=Math.max(0,r-75),dg=Math.max(0,g-75),db=Math.max(0,b-75);
+        st.background='linear-gradient(180deg, rgb('+lr+','+lg+','+lb+'), rgb('+r+','+g+','+b+') 52%, rgb('+dr+','+dg+','+db+'))';
+      }
+    }catch(e){}
     st.boxShadow='inset 0 3px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.30), inset 0 -4px 0 rgba(0,0,0,.30), inset 0 -8px 14px rgba(0,0,0,.22), 0 8px 22px rgba(0,0,0,.34)';
     st.border='1px solid rgba(255,255,255,.38)';
     st.borderRadius='12px';
