@@ -473,7 +473,10 @@ function initPage(active){
     btn.onclick=function(){
       if(installPrompt){
         installPrompt.prompt();
-        installPrompt.userChoice.then(function(){ hideInstall(); }).catch(function(){});
+        // 仅"确认安装"后隐藏并清空；取消则保留按钮，用户可再次点击
+        installPrompt.userChoice.then(function(res){
+          if(res && res.outcome==='accepted') hideInstall();
+        }).catch(function(){});
       }
     };
     document.body.appendChild(btn);
