@@ -417,25 +417,32 @@ function calcFinance(){
 function renderNav(active){
   const nav = document.getElementById("nav");
   const me = currentUser();
+  // [标签, 主色, 亮色, 暗色] —— 每个功能项独立配色，立体感更强
   const map = {
-    "index.html":"📊 总览看板",
-    "purchase.html":"🛒 采购",
-    "inventory.html":"📦 库存",
-    "mix.html":"⚗️ 场地配煤",
-    "sale.html":"📤 销售出库",
-    "finance.html":"💰 财务管理",
-    "export.html":"📥 数据导出"
+    "index.html":["📊 总览看板","#d4af37","#f7d98b","#9a740f"],
+    "purchase.html":["🛒 采购","#34a853","#7ee08a","#1e7d34"],
+    "inventory.html":["📦 库存","#1e90ff","#6cc4ff","#1466b8"],
+    "mix.html":["⚗️ 场地配煤","#8a5cf6","#c39bff","#5b3bc4"],
+    "sale.html":["📤 销售出库","#ff7a2f","#ffb07a","#c9541a"],
+    "finance.html":["💰 财务管理","#0fa983","#5adfc0","#0a7a5c"],
+    "export.html":["📥 数据导出","#4a6cf7","#7d9bff","#3450c9"]
   };
   // 模块 key 与页面文件名对应
   const pageModule = { "purchase.html":"purchase","inventory.html":"inventory","sale.html":"sale","mix.html":"mix","finance.html":"finance","export.html":"export" };
   const pills = Object.keys(map).map(href=>{
     const mod = pageModule[href];
     if(mod && !canAccess(mod)) return ""; // 无权限的模块不显示
-    const label = map[href];
+    const label = map[href][0], main=map[href][1], light=map[href][2], dark=map[href][3];
     const on = href === active;
-    return `<a href="${href}" style="display:inline-block;padding:9px 15px;margin:0 3px;border-radius:11px;text-decoration:none;font-size:14px;font-weight:600;${on?'background:linear-gradient(135deg,#f7d98b,#d4af37 50%,#b18a1f);color:#1a1408;box-shadow:inset 0 2px 0 rgba(255,255,255,.9),inset 0 -3px 0 rgba(80,50,5,.35),0 6px 14px rgba(177,138,31,.45)':'background:#f7f1e3;color:#7a6a3a;box-shadow:inset 0 1px 0 rgba(255,255,255,.75),inset 0 -2px 0 rgba(90,60,10,.14),0 2px 4px rgba(90,60,10,.10)'};transition:all .18s;" onmouseover="this.style.background='${on?'linear-gradient(135deg,#f7d98b,#d4af37 50%,#b18a1f)':'#f3e7c4'}';this.style.color='${on?'#1a1408':'#a67c00'}'" onmouseout="this.style.background='${on?'linear-gradient(135deg,#f7d98b,#d4af37 50%,#b18a1f)':'#f7f1e3'}';this.style.color='${on?'#1a1408':'#7a6a3a'}'">${label}</a>`;
+    const onBg = `linear-gradient(135deg,${light},${main} 50%,${dark})`;
+    const offBg = "#f6efe0";
+    const onShadow = `inset 0 3px 0 rgba(255,255,255,.95), inset 0 -4px 0 rgba(0,0,0,.30), 0 8px 16px ${main}66`;
+    const offShadow = "inset 0 1px 0 rgba(255,255,255,.8), inset 0 -2px 0 rgba(90,60,10,.16), 0 2px 4px rgba(90,60,10,.12)";
+    const color = on ? "#ffffff" : dark;
+    const textShadow = on ? "0 1px 1px rgba(0,0,0,.25)" : "none";
+    return `<a href="${href}" style="display:inline-block;padding:10px 16px;margin:0 3px;border-radius:12px;text-decoration:none;font-size:14px;font-weight:700;background:${on?onBg:offBg};color:${color};text-shadow:${textShadow};box-shadow:${on?onShadow:offShadow};transition:all .18s;" onmouseover="this.style.background='${onBg}';this.style.color='#ffffff';this.style.textShadow='0 1px 1px rgba(0,0,0,.25)'" onmouseout="this.style.background='${on?onBg:offBg}';this.style.color='${color}';this.style.textShadow='${textShadow}'">${label}</a>`;
   }).join("");
-  nav.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px;background:linear-gradient(180deg,#ffffff,#fbf6e6);padding:10px;border-radius:16px;border:1px solid rgba(201,154,46,.28);box-shadow:0 2px 4px rgba(90,60,10,.08),inset 0 1px 0 rgba(255,255,255,.85),0 12px 28px rgba(90,60,10,.15)">${pills}</div>`;
+  nav.innerHTML = `<div style="display:flex;flex-wrap:wrap;gap:6px;background:linear-gradient(180deg,#ffffff,#fbf3de);padding:11px;border-radius:16px;border:1px solid rgba(201,154,46,.30);box-shadow:0 2px 4px rgba(90,60,10,.08),inset 0 1px 0 rgba(255,255,255,.9),0 12px 28px rgba(90,60,10,.16)">${pills}</div>`;
 }
 
 // 页面统一初始化：校验登录 + 模块权限 + 渲染用户条 + 导航
