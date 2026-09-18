@@ -212,7 +212,7 @@ function fillExMineOptions(){
     purchaseList.forEach((p,i)=>{
       const st=(p.stockRemain ?? p.settle)||0;
       if(st<=0.001) return;
-      const pSite = p.purchaseTo || "";
+      const pSite = p.to || p.purchaseTo || "";
       if(pSite!==site) return; // 只显示本煤场的库存批次
       sel.innerHTML += `<option value="${i}">${p.from||""}（库存 ${st.toFixed(2)} 吨）</option>`;
     });
