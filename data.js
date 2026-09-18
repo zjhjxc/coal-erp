@@ -495,3 +495,37 @@ function initPage(active){
   window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); installPrompt=e; });
   window.addEventListener('appinstalled', function(){ hideInstall(); });
 })();
+
+// ===== 立体水晶按钮效果（顶部高光 + 底部暗边 + 立体投影 + 按压下沉）=====
+(function(){
+  if(typeof window==="undefined" || !document) return;
+  function isDanger(btn){
+    var t=(btn.textContent||"").trim();
+    return /删除|移除|取消|清空|作废|关闭/.test(t);
+  }
+  function apply(btn){
+    if(btn.__btn3d) return;
+    btn.__btn3d=true;
+    var st=btn.style;
+    st.boxShadow='inset 0 2px 0 rgba(255,255,255,.55), inset 0 -3px 0 rgba(0,0,0,.20), 0 5px 14px rgba(0,0,0,.18)';
+    st.border='1px solid rgba(0,0,0,.15)';
+    st.transition='box-shadow .08s, transform .06s';
+    st.cursor='pointer';
+    var pressed='inset 0 3px 8px rgba(0,0,0,.30), 0 1px 3px rgba(0,0,0,.15)';
+    var normal='inset 0 2px 0 rgba(255,255,255,.55), inset 0 -3px 0 rgba(0,0,0,.20), 0 5px 14px rgba(0,0,0,.18)';
+    btn.addEventListener('pointerdown', function(){ st.boxShadow=pressed; st.transform='translateY(1px)'; });
+    var restore=function(){ st.boxShadow=normal; st.transform=''; };
+    btn.addEventListener('pointerup', restore);
+    btn.addEventListener('pointerleave', restore);
+  }
+  function scan(){
+    document.querySelectorAll('button').forEach(function(b){
+      if(isDanger(b)) return;
+      apply(b);
+    });
+  }
+  if(document.readyState==='loading'){ window.addEventListener('DOMContentLoaded', scan); }
+  else { scan(); }
+  // 表格等动态渲染的按钮兜底补一次
+  setTimeout(scan, 600);
+})();
