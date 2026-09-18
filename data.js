@@ -51,7 +51,8 @@ let stockStartMoney = 0;
         '.stat-val{font-size:20px;font-weight:700;margin:3px 0;line-height:1.2}',
         '.stat-val span{font-size:12px;font-weight:400;opacity:.85;margin-left:2px}',
         '.stat-sub{font-size:12px;opacity:.9}',
-        'th{background:linear-gradient(180deg,#5a6db8,#3b4a7a 55%,#2b3560)!important;color:#fff!important;font-weight:700;box-shadow:inset 0 2px 0 rgba(255,255,255,.28), inset 0 -2px 0 rgba(0,0,0,.25)}'
+        'th{background:linear-gradient(180deg,#5a6db8,#3b4a7a 55%,#2b3560)!important;box-shadow:inset 0 2px 0 rgba(255,255,255,.28), inset 0 -2px 0 rgba(0,0,0,.25)}',
+        'th, th *{color:#fff!important;font-weight:600}'
       ].join("\n");
       if(document.head) document.head.appendChild(st);
       else document.documentElement.appendChild(st);
