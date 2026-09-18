@@ -434,8 +434,8 @@ function renderNav(active){
     if(mod && !canAccess(mod)) return ""; // 无权限的模块不显示
     const label = map[href][0], main=map[href][1], light=map[href][2], dark=map[href][3];
     const on = href === active;
-    const onBg = `linear-gradient(135deg,${light},${main} 50%,${dark})`;
-    const offBg = main; // 未选中也使用各功能主色作为底色
+    const onBg = `linear-gradient(160deg,${light},${main} 65%)`; // 选中项也是鲜艳主色底（不含暗端）
+    const offBg = main; // 未选中使用各功能主色作为底色
     const onShadow = `inset 0 3px 0 rgba(255,255,255,.95), inset 0 -4px 0 rgba(0,0,0,.32), 0 8px 16px ${main}66`;
     const offShadow = "inset 0 2px 0 rgba(255,255,255,.45), inset 0 -3px 0 rgba(0,0,0,.22), 0 3px 8px rgba(0,0,0,.20)";
     const color = "#ffffff";
