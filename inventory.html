@@ -103,7 +103,7 @@ function renderInventory(){
     sSettle+=settle; sUsed+=used; sStock+=stock; sMoney+=money;
     sWaterW+=(p.totalWater||0)*stock; sSulfurW+=(p.sulfur||0)*stock; sVolaW+=(p.arVola||0)*stock; sAshW+=(p.ash||0)*stock; sHeatW+=(p.heat||0)*stock;
     tb.innerHTML += `<tr class="border-t border-slate-100 odd:bg-white even:bg-emerald-50/40 hover:bg-emerald-50/60">
-      <td class="px-2 py-2.5">${p.purchaseTo||"-"}</td>
+      <td class="px-2 py-2.5">${p.to||p.purchaseTo||"-"}</td>
       <td class="px-2 py-2.5">${p.from||""}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${settle.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${used.toFixed(2)}</td>
