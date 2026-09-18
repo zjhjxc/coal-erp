@@ -213,7 +213,7 @@ function fillExMineOptions(){
       const st=(p.stockRemain ?? p.settle)||0;
       if(st<=0.001) return;
       const pSite = p.to || p.purchaseTo || "";
-      if(pSite!==site) return; // 只显示本煤场的库存批次
+      if(pSite!==site && pSite!=="本场地") return; // 只显示本煤场的库存批次(本场地=通用配煤,放行)
       sel.innerHTML += `<option value="${i}">${p.from||""}（库存 ${st.toFixed(2)} 吨）</option>`;
     });
     if(sel.querySelector(`option[value="${keep}"]`)) sel.value=keep;
