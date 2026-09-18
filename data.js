@@ -526,6 +526,9 @@ function initPage(active){
   }
   if(document.readyState==='loading'){ window.addEventListener('DOMContentLoaded', scan); }
   else { scan(); }
-  // 表格等动态渲染的按钮兜底补一次
-  setTimeout(scan, 600);
+  // 用 MutationObserver 覆盖表格/表单动态渲染的按钮，实时立体化
+  try {
+    var mo = new MutationObserver(function(){ scan(); });
+    if(document.body) mo.observe(document.body, {childList:true, subtree:true});
+  } catch(e) {}
 })();
