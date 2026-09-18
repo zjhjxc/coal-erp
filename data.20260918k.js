@@ -20,7 +20,7 @@ let stockStartMoney = 0;
         '.bg-white.rounded-2xl:hover{box-shadow:0 4px 8px rgba(90,60,10,.08),0 24px 50px rgba(90,60,10,.16);transform:translateY(-3px)}',
         '.bg-white.rounded-xl{box-shadow:0 3px 12px rgba(90,60,10,.09),inset 0 1px 0 rgba(255,255,255,.65)}',
         'table thead tr{background:linear-gradient(180deg,#f7f0dd,#ece0c0)!important}',
-        'table thead th{color:#5a4520!important;font-weight:600;letter-spacing:.02em}',
+        'table thead th{color:#fff!important;font-weight:600;letter-spacing:.02em;text-shadow:0 1px 1px rgba(0,0,0,.25)}',
         'table tbody tr{transition:background .15s ease}',
         'table tbody tr:hover{background:#fbf6e9!important}',
         'button{transition:filter .15s,transform .1s,box-shadow .15s}',
