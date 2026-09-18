@@ -417,25 +417,24 @@ function calcFinance(){
 function renderNav(active){
   const nav = document.getElementById("nav");
   const me = currentUser();
-  // [标签, 主色, 亮色, 暗色] —— 每个功能项独立配色，立体感更强
+  // [标签, 主色, 亮色, 暗色, 未选中浅色] —— 每个功能项独立配色，立体感更强
   const map = {
-    "index.html":["📊 总览看板","#d4af37","#f7d98b","#9a740f"],
-    "purchase.html":["🛒 采购","#34a853","#7ee08a","#1e7d34"],
-    "inventory.html":["📦 库存","#1e90ff","#6cc4ff","#1466b8"],
-    "mix.html":["⚗️ 场地配煤","#8a5cf6","#c39bff","#5b3bc4"],
-    "sale.html":["📤 销售出库","#ff7a2f","#ffb07a","#c9541a"],
-    "finance.html":["💰 财务管理","#0fa983","#5adfc0","#0a7a5c"],
-    "export.html":["📥 数据导出","#4a6cf7","#7d9bff","#3450c9"]
+    "index.html":["📊 总览看板","#d4af37","#f7d98b","#9a740f","#faf3dc"],
+    "purchase.html":["🛒 采购","#34a853","#7ee08a","#1e7d34","#e7f5ea"],
+    "inventory.html":["📦 库存","#1e90ff","#6cc4ff","#1466b8","#e6f2fd"],
+    "mix.html":["⚗️ 场地配煤","#8a5cf6","#c39bff","#5b3bc4","#f1ecfc"],
+    "sale.html":["📤 销售出库","#ff7a2f","#ffb07a","#c9541a","#fdeee2"],
+    "finance.html":["💰 财务管理","#0fa983","#5adfc0","#0a7a5c","#e5f6f0"],
+    "export.html":["📥 数据导出","#4a6cf7","#7d9bff","#3450c9","#e8edfd"]
   };
   // 模块 key 与页面文件名对应
   const pageModule = { "purchase.html":"purchase","inventory.html":"inventory","sale.html":"sale","mix.html":"mix","finance.html":"finance","export.html":"export" };
   const pills = Object.keys(map).map(href=>{
     const mod = pageModule[href];
     if(mod && !canAccess(mod)) return ""; // 无权限的模块不显示
-    const label = map[href][0], main=map[href][1], light=map[href][2], dark=map[href][3];
+    const label = map[href][0], main=map[href][1], light=map[href][2], dark=map[href][3], offBg=map[href][4];
     const on = href === active;
     const onBg = `linear-gradient(135deg,${light},${main} 50%,${dark})`;
-    const offBg = "#f6efe0";
     const onShadow = `inset 0 3px 0 rgba(255,255,255,.95), inset 0 -4px 0 rgba(0,0,0,.30), 0 8px 16px ${main}66`;
     const offShadow = "inset 0 1px 0 rgba(255,255,255,.8), inset 0 -2px 0 rgba(90,60,10,.16), 0 2px 4px rgba(90,60,10,.12)";
     const color = on ? "#ffffff" : dark;
