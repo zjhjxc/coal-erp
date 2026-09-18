@@ -190,9 +190,12 @@ function renderUserBar(){
   if(!bar) return;
   const sites = ["西华煤场","禹州煤场","告成煤场","叶县煤场"];
   const curSite = currentSite();
-  const allowed = user.role==="admin"
-    ? sites
-    : (Array.isArray(user.sites)&&user.sites.length ? user.sites.filter(s=>sites.indexOf(s)>=0) : [user.site||"西华煤场"]);
+  let allowed;
+  if(user.role==="admin") allowed = sites;
+  else {
+    allowed = (Array.isArray(user.sites)&&user.sites.length) ? user.sites.filter(s=>sites.indexOf(s)>=0) : [];
+    if(allowed.indexOf(user.site||"西华煤场")<0) allowed.unshift(user.site||"西华煤场");
+  }
   bar.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
       <select id="siteSwitcher" onchange="switchSite(this.value)" style="padding:5px 10px;border-radius:999px;background:#fff7e0;border:1px solid #e8c55c;color:#a67c00;font-size:13px;font-weight:600;cursor:pointer">
