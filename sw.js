@@ -25,9 +25,14 @@ self.addEventListener('fetch', (e) => {
   // 网络优先，失败回退缓存（保证数据始终从云端/服务器最新读取）
   e.respondWith(
     fetch(e.request).then((res) => {
-      const copy = res.clone();
+      // 仅缓存同源静态资源，避免对跨域(Supabase/CDN)请求做无意义缓存刷错误
       if (e.request.method === 'GET' && res && res.status === 200) {
-        caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+        try {
+          if (new URL(e.request.url).origin === self.location.origin) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(e.request, copy)).catch(() => {});
+          }
+        } catch (err) {}
       }
       return res;
     }).catch(() => caches.match(e.request).then((r) => r || fetch(e.request)))
