@@ -118,6 +118,11 @@ function saveMixPlan(){
   });
   saveAllData(); renderMixRecordTable();
   mixStockIn(); // 自动入库：减去原料重量与金额，加入新配煤成品成本
+  // 矫正：保存后清空本次勾选与结果，防止重复保存对同一批原料重复减库存/重复生成成品
+  mixSelectedList=[];
+  document.querySelectorAll(".mix-check").forEach(cb=>{ cb.checked=false; });
+  ["mixTotalTon","mixMt","mixSt","mixAdVola","mixArVola","mixAsh"].forEach(i=>{ const el=document.getElementById(i); if(el) el.innerText="0.00"; });
+  const h=document.getElementById("mixHeat"); if(h) h.innerText="0";
 }
 function renderMixRecordTable(){
   const tb=document.getElementById("mixRecordTable");
