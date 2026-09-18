@@ -198,11 +198,11 @@ function renderUserBar(){
   }
   bar.innerHTML = `
     <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <select id="siteSwitcher" onchange="switchSite(this.value)" style="padding:5px 10px;border-radius:999px;background:#fff7e0;border:1px solid #e8c55c;color:#a67c00;font-size:13px;font-weight:600;cursor:pointer">
+      <select id="siteSwitcher" onchange="switchSite(this.value)" style="padding:5px 12px;border-radius:999px;background:linear-gradient(180deg,#ffe9a8,#f7cf5c 55%,#e0ad2e);border:1px solid #c99a2e;color:#6b4d08;font-size:13px;font-weight:700;cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.7), inset 0 -2px 0 rgba(0,0,0,.15), 0 3px 8px rgba(201,154,46,.32)">
         ${sites.map(s=>`<option value="${s}" ${s===curSite?"selected":""} ${allowed.indexOf(s)<0?"disabled":""}>🏭 ${s}</option>`).join("")}
       </select>
       <span style="display:inline-flex;align-items:center;gap:6px;font-size:14px;color:#4a3a15;font-weight:600">${user.role==="admin"?"👑":"👤"} ${user.name||user.username}<span style="color:#b09a60;font-size:12px;font-weight:400">${user.role==="admin"?"管理员":"普通用户"}</span></span>
-      ${user.role==="admin" ? `<a href="users.html" style="padding:6px 12px;border-radius:8px;background:#f7e7bd;color:#a67c00;font-size:13px;text-decoration:none;font-weight:600">用户管理</a>` : ""}
+      ${user.role==="admin" ? `<a href="users.html" style="padding:6px 12px;border-radius:9px;background:linear-gradient(180deg,#ffefb8,#e8c55c 55%,#c99a2e);color:#5a3d05;font-size:13px;text-decoration:none;font-weight:700;border:1px solid #b18a1f;box-shadow:inset 0 2px 0 rgba(255,255,255,.75), inset 0 -2px 0 rgba(0,0,0,.16), 0 3px 8px rgba(201,154,46,.35)">用户管理</a>` : ""}
       <button onclick="logout()" style="padding:6px 14px;border-radius:8px;background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer">退出</button>
     </div>`;
 }
