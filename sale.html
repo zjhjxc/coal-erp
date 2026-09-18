@@ -230,6 +230,11 @@ function delSale(idx){
 }
 loadAllData();
 initPage("sale.html");
+// 出货煤场默认跟随当前查看煤场（切煤场后新开单默认该煤场）
+(function(){
+  const sn = document.getElementById("saleNo");
+  if(sn){ const cs = currentSite(); if(cs) sn.value = cs; }
+})();
 if(!canEdit("sale")){
   const w = document.getElementById("saleFormWrap");
   if(w) w.innerHTML = `<div class="text-sm text-gray-500 p-2">当前账号为只读权限，仅可查看，不可新增。</div>`;
