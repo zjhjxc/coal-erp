@@ -193,7 +193,7 @@ function mixStockIn(){
         ash=parseFloat(document.getElementById("mixAsh").innerText)||0,
         heat=parseFloat(document.getElementById("mixHeat").innerText);
   purchaseList.push({
-    date:new Date().toLocaleDateString(), no:mixNo, from:productName, to:"本场地", car:"", driver:"",
+    date:new Date().toLocaleDateString(), no:mixNo, from:productName, to:(typeof currentSite==='function'?(currentSite()||"西华煤场"):"西华煤场"), car:"", driver:"",
     orig:totalTon, settle:totalTon, stockRemain:totalTon, diff:0, totalWater:mt, sulfur:st, adVola, arVola, ash, heat,
     coalUnitPrice: 0, coalTotalMoney:0, freightTotal:0, brokerAmount:0,
     totalCostAll:totalMixCost, tonCostAll:totalMixCost/totalTon,
