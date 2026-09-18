@@ -60,6 +60,7 @@ function doLogin(){
     const found = users.find(x => x.username===u && x.password===p);
     if(!found) return false;
     localStorage.setItem(SESSION_KEY, JSON.stringify({ username:found.username, name:found.name, role:found.role, site:found.site||"西华煤场", sites: Array.isArray(found.sites)&&found.sites.length ? found.sites : [found.site||"西华煤场"], perms: found.perms||{} }));
+    if(found.role!=="admin") localStorage.removeItem("coalViewSite"); // 普通用户每次登录回到自己的默认煤场，不继承共享终端的残留选择
     location.href = "index.html";
     return true;
   };
