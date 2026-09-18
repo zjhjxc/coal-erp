@@ -452,3 +452,10 @@ function initPage(active){
   renderUserBar();
   renderNav(active);
 }
+
+// ===== PWA 离线安装支持（让 Chrome 出现"安装应用"按钮，可添加到桌面）=====
+(function(){
+  if(typeof navigator!=="undefined" && 'serviceWorker' in navigator){
+    navigator.serviceWorker.register('sw.js').catch(function(err){ console.warn("SW注册失败", err); });
+  }
+})();
