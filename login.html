@@ -51,6 +51,9 @@
           <input type="password" id="password" name="password" autocomplete="current-password" placeholder="请输入密码" style="padding:11px 14px 11px 40px;width:100%;border:1px solid #d9c7a0;border-radius:12px;font-size:14px;background:#fffdf7;color:#3a3320;box-sizing:border-box">
         </div>
       </div>
+      <div class="flex items-center justify-between mb-4">
+        <label class="flex items-center gap-1.5 text-xs cursor-pointer" style="color:#8a7a55"><input type="checkbox" id="remember" checked class="accent-amber-600">记住账号密码</label>
+      </div>
       <button type="submit" class="w-full py-3 rounded-xl font-semibold text-sm cursor-pointer" style="background:linear-gradient(135deg,#f7d98b,#d4af37 55%,#b18a1f);color:#1a1408;box-shadow:0 8px 24px rgba(177,138,31,.35);border:none">登 录</button>
     </form>
     <p class="text-center text-xs mt-5" style="color:#9a8a60">默认管理员：丁浩伦 / 123456</p>
@@ -70,6 +73,9 @@ function doLogin(){
     if(!found) return false;
     localStorage.setItem(SESSION_KEY, JSON.stringify({ username:found.username, name:found.name, role:found.role, site:found.site||"西华煤场", sites: Array.isArray(found.sites)&&found.sites.length ? found.sites : [found.site||"西华煤场"], perms: found.perms||{} }));
     if(found.role!=="admin") localStorage.removeItem("coalViewSite"); // 普通用户每次登录回到自己的默认煤场，不继承共享终端的残留选择
+    const rb=document.getElementById("remember");
+    if(rb && rb.checked){ try{ localStorage.setItem("coalRemember", JSON.stringify({u:u,p:p})); }catch(e){} }
+    else { localStorage.removeItem("coalRemember"); }
     location.href = "index.html";
     return true;
   };
@@ -85,6 +91,14 @@ function doLogin(){
   });
   return false;
 }
+// 已登录自动进入系统；否则自动填充记住的账号密码（手机点开图标直接可用）
+(function(){
+  try{ if(localStorage.getItem(SESSION_KEY)){ location.href="index.html"; return; } }catch(e){}
+  try{
+    const r=JSON.parse(localStorage.getItem("coalRemember")||"null");
+    if(r && r.u){ document.getElementById("username").value=r.u; if(r.p) document.getElementById("password").value=r.p; }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>
