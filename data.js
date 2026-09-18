@@ -459,3 +459,34 @@ function initPage(active){
     navigator.serviceWorker.register('sw.js').catch(function(err){ console.warn("SW注册失败", err); });
   }
 })();
+
+// ===== 一键"安装到手机桌面"悬浮按钮（Chrome/Edge 支持时自动出现）=====
+(function(){
+  if(typeof window==="undefined" || !('serviceWorker' in navigator)) return;
+  var installPrompt=null;
+  function showInstall(){
+    if(document.getElementById("coalInstallBtn")) return;
+    var btn=document.createElement("div");
+    btn.id="coalInstallBtn";
+    btn.innerHTML='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg><span>安装到手机桌面</span>';
+    btn.style.cssText='position:fixed;right:16px;bottom:84px;z-index:99999;display:flex;align-items:center;gap:8px;padding:12px 18px;border-radius:999px;cursor:pointer;font-size:14px;font-weight:600;color:#1a1408;background:linear-gradient(135deg,#f7d98b,#d4af37 55%,#b18a1f);box-shadow:0 10px 30px rgba(177,138,31,.5);border:1px solid rgba(255,255,255,.5);font-family:inherit';
+    btn.onclick=function(){
+      if(installPrompt){
+        installPrompt.prompt();
+        installPrompt.userChoice.then(function(){ hideInstall(); }).catch(function(){});
+      }
+    };
+    document.body.appendChild(btn);
+  }
+  function hideInstall(){
+    var b=document.getElementById("coalInstallBtn");
+    if(b) b.remove();
+    installPrompt=null;
+  }
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    installPrompt=e;
+    showInstall();
+  });
+  window.addEventListener('appinstalled', function(){ hideInstall(); });
+})();
