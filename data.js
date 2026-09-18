@@ -514,13 +514,13 @@ function initPage(active){
     if(btn.__btn3d) return;
     btn.__btn3d=true;
     var st=btn.style;
-    st.boxShadow='inset 0 2px 0 rgba(255,255,255,.85), inset 0 -2px 0 rgba(255,255,255,.40), inset 0 -4px 8px rgba(0,0,0,.14), 0 6px 16px rgba(0,0,0,.22)';
+    st.boxShadow='inset 0 3px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.30), inset 0 -4px 0 rgba(0,0,0,.30), inset 0 -8px 14px rgba(0,0,0,.22), 0 8px 22px rgba(0,0,0,.34)';
     st.border='1px solid rgba(255,255,255,.38)';
     st.borderRadius='12px';
     st.transition='box-shadow .08s, transform .06s';
     st.cursor='pointer';
     var pressed='inset 0 4px 10px rgba(0,0,0,.30), 0 1px 3px rgba(0,0,0,.15)';
-    var normal='inset 0 2px 0 rgba(255,255,255,.85), inset 0 -2px 0 rgba(255,255,255,.40), inset 0 -4px 8px rgba(0,0,0,.14), 0 6px 16px rgba(0,0,0,.22)';
+    var normal='inset 0 3px 0 rgba(255,255,255,.95), inset 0 -1px 0 rgba(255,255,255,.30), inset 0 -4px 0 rgba(0,0,0,.30), inset 0 -8px 14px rgba(0,0,0,.22), 0 8px 22px rgba(0,0,0,.34)';
     btn.addEventListener('pointerdown', function(){ st.boxShadow=pressed; st.transform='translateY(1px)'; });
     var restore=function(){ st.boxShadow=normal; st.transform=''; };
     btn.addEventListener('pointerup', restore);
