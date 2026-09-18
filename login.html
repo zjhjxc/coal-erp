@@ -56,19 +56,22 @@ function doLogin(){
   const p = document.getElementById("password").value;
   if(!u || !p){ document.getElementById("msg").textContent="请输入用户名和密码"; return false; }
   const finish = function(users){
+    if(!users) return false;
     const found = users.find(x => x.username===u && x.password===p);
-    if(!found){ document.getElementById("msg").textContent="用户名或密码错误"; return false; }
+    if(!found) return false;
     localStorage.setItem(SESSION_KEY, JSON.stringify({ username:found.username, name:found.name, role:found.role, site:found.site||"西华煤场", sites: Array.isArray(found.sites)&&found.sites.length ? found.sites : [found.site||"西华煤场"], perms: found.perms||{} }));
-    cloudPushUsers(users); // 登录成功，把当前用户表同步到云端
     location.href = "index.html";
-    return false;
+    return true;
   };
   const local = loadUsers();
-  if(local.find(x => x.username===u && x.password===p)){ return finish(local); }
-  // 本地无此用户：从云端拉取用户表再匹配
+  // 云端用户表优先（含管理员最新开放的煤场），本地作为离线兜底；避免本地旧数据覆盖云端新权限
   cloudPullUsers().then(function(cu){
-    if(cu && cu.length){ saveUsers(cu); finish(cu); }
-    else { document.getElementById("msg").textContent="用户名或密码错误"; }
+    let src = (cu && cu.length) ? cu : local;
+    if(finish(src)){ if(cu && cu.length) saveUsers(cu); return; }
+    if(src !== local && finish(local)) return;
+    document.getElementById("msg").textContent="用户名或密码错误";
+  }).catch(function(){
+    if(!finish(local)) document.getElementById("msg").textContent="用户名或密码错误";
   });
   return false;
 }
