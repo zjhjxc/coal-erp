@@ -180,7 +180,7 @@ function addPurchase(){
   const totalCostAll = roundInt(coalTotalMoney+freightTotal+brokerAmount);
   const obj = {
     date:purchaseDate, no: (editIndex>=0 && purchaseList[editIndex]) ? purchaseList[editIndex].no : "P"+Date.now(), from:g("purchaseFrom"), to:g("purchaseTo"), receiver:g("receiver"),
-    orig:n("origTon"), settle, stockRemain: (editIndex>=0 && purchaseList[editIndex]) ? (purchaseList[editIndex].stockRemain ?? purchaseList[editIndex].settle) : settle, diff:n("origTon")-settle,
+    orig:n("origTon"), settle, stockRemain: (editIndex>=0 && purchaseList[editIndex]) ? Math.max(0, (purchaseList[editIndex].stockRemain ?? purchaseList[editIndex].settle) + (settle - (purchaseList[editIndex].settle||0))) : settle, diff:n("origTon")-settle,
     totalWater:n("totalWater"), sulfur:n("sulfur"), adVola:n("adVola"), ash:n("ash"), arVola:n("arVola"),
     heat:roundInt(n("heat")), coalUnitPrice, coalTotalMoney, freightTotal, brokerAmount,
     totalCostAll, tonCostAll: settle>0 ? totalCostAll/settle : 0,
