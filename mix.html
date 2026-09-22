@@ -36,7 +36,7 @@
     <h4 class="font-semibold mb-2">可选采购原料（勾选，填写本次使用吨位）</h4>
     <table class="w-full text-sm">
       <thead><tr>
-        <th>选择</th><th>来源矿点</th><th>原进厂吨位</th><th>库存</th><th>本次使用吨位</th>
+        <th>选择</th><th>煤场</th><th>来源矿点</th><th>原进厂吨位</th><th>库存</th><th>本次使用吨位</th>
         <th>全水Mt</th><th>全硫St</th><th>空干挥发</th><th>收到挥发</th><th>灰份</th><th>热值</th>
       </tr></thead>
       <tbody id="mixSourceTable"></tbody>
@@ -61,30 +61,49 @@
   </div>
 </div>
 
-<script src="data.20260918p.js"></script>
+<script src="data.20260922a.js"></script>
 <script>
+var allMixSource=[];   // 所有煤场原料合并(配煤跨煤场选料)
+var allSiteData={};    // 各煤场云端数据缓存(跨煤场扣库存写回用)
 function loadPurchaseToCoalMix(){
+  const curSite=(typeof currentSite==='function')?currentSite():"西华煤场";
+  const sites=(typeof SITES!=="undefined")?SITES:["西华煤场","禹州煤场","告成煤场","叶县煤场"];
+  allMixSource=[]; allSiteData={};
+  function pushBatch(p,site){
+    const settle=p.settle||0; if(settle<=0) return;
+    const st=(p.stockRemain ?? p.settle)||0; if(st<=0.001) return; // 库存为0自动隐藏
+    allMixSource.push(Object.assign({},p,{_site:site,_settle:settle,_stock:st}));
+  }
+  purchaseList.forEach(p=>pushBatch(p,curSite)); // 当前煤场(本地)
+  renderMixSourceTable();
+  // 异步拉其他煤场
+  const tasks=sites.filter(s=>s!==curSite).map(s=>{
+    return cloudPullAppStateBySite(s).then(d=>{
+      if(d){ allSiteData[s]=d; (d.purchaseList||[]).forEach(p=>pushBatch(p,s)); }
+    }).catch(()=>{});
+  });
+  Promise.all(tasks).then(renderMixSourceTable);
+}
+function renderMixSourceTable(){
   const tb=document.getElementById("mixSourceTable");
   tb.innerHTML="";
-  purchaseList.forEach((p,idx)=>{
-    if(p.settle<=0) return;
-    const stock = (p.stockRemain ?? p.settle)||0;
-    if(stock<=0.001) return; // 库存为0的原料自动隐藏
+  allMixSource.forEach((p,idx)=>{
     tb.innerHTML += `<tr>
-      <td><input type="checkbox" data-idx="${idx}" class="mix-check"></td>
-      <td>${p.from||""}</td><td>${p.settle.toFixed(2)}</td>
-      <td>${(p.stockRemain ?? p.settle).toFixed(2)}</td>
-      <td><input type="number" step="0.01" min="0" max="${(p.stockRemain ?? p.settle).toFixed(2)}" value="${(p.stockRemain ?? p.settle).toFixed(2)}"
-        data-idx="${idx}" class="mix-weight-input w-20 border p-1"></td>
+      <td><input type="checkbox" data-key="${idx}" class="mix-check"></td>
+      <td>${p._site||""}</td>
+      <td>${p.from||""}</td><td>${(p._settle).toFixed(2)}</td>
+      <td>${(p._stock).toFixed(2)}</td>
+      <td><input type="number" step="0.01" min="0" max="${(p._stock).toFixed(2)}" value="${(p._stock).toFixed(2)}"
+        data-key="${idx}" class="mix-weight-input w-20 border p-1"></td>
       <td>${p.totalWater}</td><td>${p.sulfur}</td><td>${p.adVola??0}</td><td>${p.arVola}</td><td>${p.ash??0}</td><td>${p.heat}</td>
     </tr>`;
   });
   setTimeout(()=>{
     document.querySelectorAll(".mix-weight-input").forEach(input=>{
       input.onblur=function(){
-        const idx=Number(this.dataset.idx), p=purchaseList[idx];
+        const idx=Number(this.dataset.key), p=allMixSource[idx]; if(!p) return;
         let v=parseFloat(this.value)||0;
-        if(v>p.settle){ alert(`不能超过进货吨位 ${p.settle.toFixed(2)}吨`); this.value=p.settle.toFixed(2); }
+        if(v>p._stock){ alert(`不能超过库存 ${p._stock.toFixed(2)}吨`); this.value=p._stock.toFixed(2); }
         if(v<0) this.value=0;
       };
     });
@@ -95,10 +114,10 @@ function calcMixCoal(){
   mixSelectedList=[];
   let totalTon=0,sumMt=0,sumSt=0,sumAdV=0,sumArV=0,sumAsh=0,sumHeat=0;
   boxes.forEach(cb=>{
-    const idx=Number(cb.dataset.idx), item=purchaseList[idx];
-    const input=document.querySelector(`.mix-weight-input[data-idx="${idx}"]`);
+    const idx=Number(cb.dataset.key), item=allMixSource[idx];
+    const input=document.querySelector(`.mix-weight-input[data-key="${idx}"]`);
     let useW=parseFloat(input.value)||0;
-    const stock=(item.stockRemain ?? item.settle)||0;
+    const stock=item._stock||0;
     if(useW>stock){ alert(`来源${item.from||''}使用重量不能超过库存 ${stock.toFixed(2)}吨`); useW=stock; }
     if(useW<0) useW=0;
     mixSelectedList.push({source:item, useTon:useW});
@@ -179,10 +198,25 @@ function mixStockIn(){
   const productName=document.getElementById("mixProductName").value.trim()||"场地配煤";
   if(totalTon<=0){ alert("先计算配煤才能入库！"); return; }
   let totalMixCost=0;
+  const curSite=(typeof currentSite==='function')?currentSite():"西华煤场";
+  const siteChanged={};
   mixSelectedList.forEach(rec=>{
     const src=rec.source;
     totalMixCost += (src.totalCostAll/(src.settle||1))*rec.useTon;
-    src.stockRemain = ((src.stockRemain ?? src.settle) - rec.useTon); if(src.stockRemain<0) src.stockRemain=0;
+    const s=src._site||curSite;
+    let batch;
+    if(s===curSite){
+      batch=purchaseList.find(p=>p.no===src.no);
+    } else {
+      if(!siteChanged[s]) siteChanged[s]=allSiteData[s]||{purchaseList:[],saleList:[],coalMixRecordList:[],stockStartTon:0,stockStartMoney:0};
+      batch=(siteChanged[s].purchaseList||[]).find(p=>p.no===src.no);
+    }
+    if(batch){ batch.stockRemain=Math.max(0,((batch.stockRemain??batch.settle)-rec.useTon)); }
+  });
+  // 跨煤场原料:扣完库存写回对应煤场
+  Object.keys(siteChanged).forEach(s=>{
+    if(s===curSite) return;
+    cloudPushAppStateBySite(s, siteChanged[s]);
   });
   totalMixCost=roundInt(totalMixCost);
   const mixNo="MIX-"+Date.now();
