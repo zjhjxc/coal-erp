@@ -61,7 +61,7 @@
   </div>
 </div>
 
-<script src="data.20260922a.js"></script>
+<script src="$NEW"></script>
 <script>
 var allMixSource=[];   // 所有煤场原料合并(配煤跨煤场选料)
 var allSiteData={};    // 各煤场云端数据缓存(跨煤场扣库存写回用)
@@ -167,11 +167,23 @@ function renderMixRecordTable(){
 function delMixRecord(idx){
   if(!confirm("确认删除该配煤方案？将恢复原料库存并删除对应配煤成品")) return;
   const it = coalMixRecordList[idx];
-  if(it){
-    // 1. 回滚原料库存
+  if(!it){ renderMixRecordTable(); return; }
+  const curSite=(typeof currentSite==='function')?currentSite():"西华煤场";
+  const sites=(typeof SITES!=="undefined")?SITES:["西华煤场","禹州煤场","告成煤场","叶县煤场"];
+  // 先确保跨煤场数据已加载
+  const tasks=sites.filter(s=>s!==curSite && !allSiteData[s]).map(s=>{
+    return cloudPullAppStateBySite(s).then(d=>{ if(d) allSiteData[s]=d; }).catch(()=>{});
+  });
+  Promise.all(tasks).then(()=>{
+    // 1. 回滚原料库存(含跨煤场)
+    const siteChanged={};
     (it.sourceList||[]).forEach(s=>{
       const src = findSrcForMix(s);
-      if(src){ src.stockRemain = Math.min(src.settle||0, ((src.stockRemain ?? src.settle)||0) + (s.useTon||0)); }
+      if(src){
+        src.stockRemain = Math.min(src.settle||0, ((src.stockRemain ?? src.settle)||0) + (s.useTon||0));
+        const ss=(s.source && s.source._site)||curSite;
+        if(ss!==curSite && allSiteData[ss]) siteChanged[ss]=allSiteData[ss];
+      }
     });
     // 2. 删除对应配煤成品
     let delIdx = -1;
@@ -181,17 +193,19 @@ function delMixRecord(idx){
       purchaseList.forEach((p,i)=>{ if((p.no||"").indexOf("MIX-")===0){ if(cnt===idx) delIdx=i; cnt++; } });
     }
     if(delIdx>=0) purchaseList.splice(delIdx,1);
-    // 3. 修正销售记录的批次索引（指向被删成品的置-1，之后的减1）
+    // 3. 修正销售记录的批次索引
     saleList.forEach(r=>{
       if(r.saleBatchIdx1===delIdx) r.saleBatchIdx1=-1; else if(r.saleBatchIdx1>delIdx) r.saleBatchIdx1--;
       if(r.saleBatchIdx2===delIdx) r.saleBatchIdx2=-1; else if(r.saleBatchIdx2>delIdx) r.saleBatchIdx2--;
     });
-  }
-  coalMixRecordList.splice(idx,1);
-  saveAllData();
-  renderMixRecordTable();
-  const f=document.getElementById("mixSourceTable");
-  if(f) loadPurchaseToCoalMix();
+    // 4. 写回跨煤场
+    Object.keys(siteChanged).forEach(ss=>{ cloudPushAppStateBySite(ss, siteChanged[ss]); });
+    coalMixRecordList.splice(idx,1);
+    saveAllData();
+    renderMixRecordTable();
+    const f=document.getElementById("mixSourceTable");
+    if(f) loadPurchaseToCoalMix();
+  });
 }
 function mixStockIn(){
   const totalTon=parseFloat(document.getElementById("mixTotalTon").innerText);
