@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <title>库存 - 煤炭进销存</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<style>
+/* 紧凑行距 */
+.inv-compact td, .inv-compact th { padding-top:3px !important; padding-bottom:3px !important; line-height:1.25; }
+.inv-compact input { padding:1px 3px !important; font-size:12px !important; }
+</style>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -35,7 +40,7 @@
     </div>
   </div>
   <div class="border p-3 rounded bg-white overflow-x-auto">
-    <table class="w-full text-sm" style="table-layout:fixed">
+    <table class="w-full text-sm inv-compact" style="table-layout:fixed">
       <colgroup>
         <col style="width:12%"><col style="width:9%"><col style="width:9%"><col style="width:10%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:8%"><col style="width:9%"><col style="width:11%"><col style="width:8%">
       </colgroup>
