@@ -4,6 +4,10 @@
 <meta charset="UTF-8">
 <title>场地配煤 - 煤炭进销存</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<style>
+.mix-rec th, .mix-rec td { text-align:center; padding-top:4px; padding-bottom:4px; }
+.mix-rec td:nth-child(9) { text-align:left; } /* 原料明细左对齐 */
+</style>
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -54,8 +58,8 @@
 
   <div class="bg-white rounded-xl p-3">
     <h4 class="font-semibold mb-2">📜 已保存配煤方案</h4>
-    <table class="w-full text-sm">
-      <thead><tr><th>序号</th><th>配煤总吨</th><th>全水</th><th>全硫</th><th>空干挥发</th><th>收到挥发</th><th>灰份</th><th>热值</th><th>原料明细</th><th>操作</th></tr></thead>
+    <table class="w-full text-sm mix-rec">
+      <thead><tr class="bg-emerald-50 text-slate-700"><th>序号</th><th>配煤总吨</th><th>全水</th><th>全硫</th><th>空干挥发</th><th>收到挥发</th><th>灰份</th><th>热值</th><th>原料明细</th><th>操作</th></tr></thead>
       <tbody id="mixRecordTable"></tbody>
     </table>
   </div>
