@@ -144,8 +144,8 @@ function saveMixPlan(){
     heat:parseFloat(document.getElementById("mixHeat").innerText),
     sourceList:mixSelectedList
   });
-  saveAllData(); renderMixRecordTable();
-  mixStockIn(); // 自动入库：减去原料重量与金额，加入新配煤成品成本
+  renderMixRecordTable();
+  mixStockIn(); // 自动入库：减去原料重量与金额，加入新配煤成品成本(内部统一保存,避免竞态覆盖)
   // 矫正：保存后清空本次勾选与结果，防止重复保存对同一批原料重复减库存/重复生成成品
   mixSelectedList=[];
   document.querySelectorAll(".mix-check").forEach(cb=>{ cb.checked=false; });
