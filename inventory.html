@@ -110,16 +110,16 @@ function renderInventory(){
       <td class="px-2 py-2.5 text-right tabular-nums">${settle.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${used.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums font-medium">${stock.toFixed(2)}</td>
-      <td class="px-2 py-2.5"><input class="w-16 border rounded px-1 py-0.5 text-right tabular-nums" data-i="${idx}" data-f="totalWater" value="${(p.totalWater||0).toFixed(2)}" onchange="editStockField(${idx},'totalWater',this.value)"></td>
-      <td class="px-2 py-2.5"><input class="w-16 border rounded px-1 py-0.5 text-right tabular-nums" data-i="${idx}" data-f="sulfur" value="${(p.sulfur||0).toFixed(2)}" onchange="editStockField(${idx},'sulfur',this.value)"></td>
-      <td class="px-2 py-2.5"><input class="w-16 border rounded px-1 py-0.5 text-right tabular-nums" data-i="${idx}" data-f="arVola" value="${(p.arVola||0).toFixed(2)}" onchange="editStockField(${idx},'arVola',this.value)"></td>
-      <td class="px-2 py-2.5"><input class="w-16 border rounded px-1 py-0.5 text-right tabular-nums" data-i="${idx}" data-f="ash" value="${(p.ash||0).toFixed(2)}" onchange="editStockField(${idx},'ash',this.value)"></td>
-      <td class="px-2 py-2.5"><input class="w-20 border rounded px-1 py-0.5 text-right tabular-nums" data-i="${idx}" data-f="heat" value="${p.heat||0}" onchange="editStockField(${idx},'heat',this.value)"></td>
+      <td class="px-1 py-2.5"><input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-white" data-i="${idx}" data-f="totalWater" value="${(p.totalWater||0).toFixed(2)}" onchange="editStockField(${idx},'totalWater',this.value)"></td>
+      <td class="px-1 py-2.5"><input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-white" data-i="${idx}" data-f="sulfur" value="${(p.sulfur||0).toFixed(2)}" onchange="editStockField(${idx},'sulfur',this.value)"></td>
+      <td class="px-1 py-2.5"><input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-white" data-i="${idx}" data-f="arVola" value="${(p.arVola||0).toFixed(2)}" onchange="editStockField(${idx},'arVola',this.value)"></td>
+      <td class="px-1 py-2.5"><input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-white" data-i="${idx}" data-f="ash" value="${(p.ash||0).toFixed(2)}" onchange="editStockField(${idx},'ash',this.value)"></td>
+      <td class="px-1 py-2.5"><input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-white" data-i="${idx}" data-f="heat" value="${p.heat||0}" onchange="editStockField(${idx},'heat',this.value)"></td>
       <td class="px-2 py-2.5 text-right tabular-nums">${unit.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${money}</td>
-      <td class="px-2 py-2.5 text-center whitespace-nowrap">
-        <button onclick="editBatch(${idx})" class="px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#60a5fa,#2563eb),box-shadow:0 2px 6px rgba(37,99,235,.3)">修改</button>
-        <button onclick="delBatch(${idx})" class="px-2 py-1 rounded text-white text-xs ml-1" style="background:linear-gradient(135deg,#f87171,#dc2626),box-shadow:0 2px 6px rgba(220,38,38,.3)">删除</button>
+      <td class="px-1 py-2 text-center">
+        <button onclick="editBatch(${idx})" class="block w-full mb-1 px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#60a5fa,#2563eb),box-shadow:0 2px 6px rgba(37,99,235,.3)">修改</button>
+        <button onclick="delBatch(${idx})" class="block w-full px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#f87171,#dc2626),box-shadow:0 2px 6px rgba(220,38,38,.3)">删除</button>
       </td>
     </tr>`;
   });
