@@ -119,12 +119,12 @@ function renderInventory(){
       <td class="px-1 py-2">${cIn("heat",p.heat||0)}</td>
       <td class="px-2 py-2 text-right tabular-nums">${unit.toFixed(2)}</td>
       <td class="px-2 py-2 text-right tabular-nums">${money}</td>
-      <td class="px-1 py-2 text-center">
+      <td class="px-1 py-1 text-center whitespace-nowrap">
         ${ed
-          ? `<button onclick="saveBatch(${idx})" class="block w-full mb-1 px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#34d399,#059669),box-shadow:0 2px 6px rgba(5,150,105,.3)">保存</button>
-             <button onclick="cancelBatch()" class="block w-full px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#9ca3af,#6b7280)">取消</button>`
-          : `<button onclick="editBatch(${idx})" class="block w-full mb-1 px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#60a5fa,#2563eb),box-shadow:0 2px 6px rgba(37,99,235,.3)">修改</button>
-             <button onclick="delBatch(${idx})" class="block w-full px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#f87171,#dc2626),box-shadow:0 2px 6px rgba(220,38,38,.3)">删除</button>`}
+          ? `<button onclick="saveBatch(${idx})" class="px-1.5 py-0.5 rounded text-white text-[10px]" style="background:linear-gradient(135deg,#34d399,#059669)">保存</button>
+             <button onclick="cancelBatch()" class="px-1.5 py-0.5 rounded text-white text-[10px] ml-0.5" style="background:linear-gradient(135deg,#9ca3af,#6b7280)">取消</button>`
+          : `<button onclick="editBatch(${idx})" class="px-1.5 py-0.5 rounded text-white text-[10px]" style="background:linear-gradient(135deg,#60a5fa,#2563eb)">修改</button>
+             <button onclick="delBatch(${idx})" class="px-1.5 py-0.5 rounded text-white text-[10px] ml-0.5" style="background:linear-gradient(135deg,#f87171,#dc2626)">删除</button>`}
       </td>
     </tr>`;
   });
