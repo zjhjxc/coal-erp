@@ -144,10 +144,22 @@ function exportFinance(){
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fd),"财务对账");
   XLSX.writeFile(wb,"财务对账.xlsx");
 }
-// ===== 资质空白表：下载模板 / 上传 / 下载 / 删除 =====
-const CERT_KEY="coalCerts";
-function getCerts(){ try{ return JSON.parse(localStorage.getItem(CERT_KEY)||"[]"); }catch(e){ return []; } }
-function setCerts(a){ localStorage.setItem(CERT_KEY, JSON.stringify(a)); }
+// ===== 资质空白表：云端存储(跨设备同步) =====
+var certs=[];
+var CERT_SITE="西华煤场";
+function cloudGetCerts(){
+  return cloudPullAppStateBySite(CERT_SITE).then(function(p){
+    certs = (p && p.certs) || [];
+    renderCerts();
+  }).catch(function(){ certs=[]; renderCerts(); });
+}
+function cloudSaveCerts(){
+  return cloudPullAppStateBySite(CERT_SITE).then(function(p){
+    p = p || { purchaseList:[], saleList:[], coalMixRecordList:[] };
+    p.certs = certs;
+    return _cfetch("app_state?site=eq."+encodeURIComponent(CERT_SITE), { method:"PATCH", headers:{ "Prefer":"return=minimal" }, body: JSON.stringify({ payload:p }) });
+  });
+}
 function dlTemplate(name){
   const headers={
     "营业执照":["单位名称","统一社会信用代码","法人","注册地址","有效期"],
@@ -163,33 +175,30 @@ function dlTemplate(name){
 function uploadCert(){
   const f=document.getElementById("certFile").files[0];
   if(!f){ alert("请先选择文件"); return; }
-  if(f.size>2.5*1024*1024){ alert("文件不能超过2.5MB（手机照片建议裁剪后再传）"); return; }
+  if(f.size>1.5*1024*1024){ alert("文件不能超过1.5MB（手机照片建议裁剪后再传）"); return; }
   const r=new FileReader();
   r.onload=function(){
-    const arr=getCerts();
-    arr.push({name:f.name, size:f.size, type:f.type||"", data:r.result, time:new Date().toLocaleString()});
-    setCerts(arr);
+    certs.push({name:f.name, size:f.size, type:f.type||"", data:r.result, time:new Date().toLocaleString()});
+    cloudSaveCerts().then(function(){ renderCerts(); alert("已上传云端"); });
     document.getElementById("certFile").value="";
-    renderCerts();
-    alert("上传成功");
   };
   r.readAsDataURL(f);
 }
 function downloadCert(i){
-  const c=getCerts()[i]; if(!c) return;
+  const c=certs[i]; if(!c) return;
   const a=document.createElement("a");
   a.href=c.data; a.download=c.name; a.click();
 }
 function delCert(i){
   if(!confirm("确认删除该资质文件？")) return;
-  const arr=getCerts(); arr.splice(i,1); setCerts(arr); renderCerts();
+  certs.splice(i,1);
+  cloudSaveCerts().then(renderCerts);
 }
 function renderCerts(){
   const tb=document.getElementById("certList");
-  const arr=getCerts();
   tb.innerHTML="";
-  if(!arr.length){ tb.innerHTML='<tr><td colspan="3" class="border px-2 py-2 text-center text-gray-400">暂无上传的资质文件</td></tr>'; return; }
-  arr.forEach((c,i)=>{
+  if(!certs.length){ tb.innerHTML='<tr><td colspan="3" class="border px-2 py-2 text-center text-gray-400">暂无上传的资质文件</td></tr>'; return; }
+  certs.forEach((c,i)=>{
     const kb=(c.size/1024).toFixed(1);
     tb.innerHTML+=`<tr>
       <td class="border px-2 py-1">${c.name}<br><span class="text-xs text-gray-400">${c.time||""}</span></td>
@@ -202,7 +211,7 @@ function renderCerts(){
 }
 loadAllData();
 initPage("export.html");
-renderCerts();
+cloudGetCerts();
 </script>
 </body>
 </html>
