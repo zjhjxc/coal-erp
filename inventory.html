@@ -93,7 +93,7 @@ function renderInventory(){
       <td class="px-2 py-2.5 text-right tabular-nums">${stockStartMoney||0}</td>
     </tr>`;
   }
-  purchaseList.forEach(p=>{
+  purchaseList.forEach((p,idx)=>{
     const settle = p.settle||0;
     const stock = (p.stockRemain ?? settle)||0;
     if(stock<=0.001) return; // 库存为0的行自动隐藏
@@ -108,11 +108,11 @@ function renderInventory(){
       <td class="px-2 py-2.5 text-right tabular-nums">${settle.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${used.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums font-medium">${stock.toFixed(2)}</td>
-      <td class="px-2 py-2.5 text-right tabular-nums">${(p.totalWater||0).toFixed(2)}</td>
-      <td class="px-2 py-2.5 text-right tabular-nums">${(p.sulfur||0).toFixed(2)}</td>
-      <td class="px-2 py-2.5 text-right tabular-nums">${(p.arVola||0).toFixed(2)}</td>
-      <td class="px-2 py-2.5 text-right tabular-nums">${(p.ash||0).toFixed(2)}</td>
-      <td class="px-2 py-2.5 text-right tabular-nums">${p.heat||0}</td>
+      <td class="px-2 py-2.5"><input class="w-16 border rounded px-1 py-0.5 text-right tabular-nums" data-i="${idx}" data-f="totalWater" value="${(p.totalWater||0).toFixed(2)}" onchange="editStockField(${idx},'totalWater',this.value)"></td>
+      <td class="px-2 py-2.5"><input class="w-16 border rounded px-1 py-0.5 text-right tabular-nums" data-i="${idx}" data-f="sulfur" value="${(p.sulfur||0).toFixed(2)}" onchange="editStockField(${idx},'sulfur',this.value)"></td>
+      <td class="px-2 py-2.5"><input class="w-16 border rounded px-1 py-0.5 text-right tabular-nums" data-i="${idx}" data-f="arVola" value="${(p.arVola||0).toFixed(2)}" onchange="editStockField(${idx},'arVola',this.value)"></td>
+      <td class="px-2 py-2.5"><input class="w-16 border rounded px-1 py-0.5 text-right tabular-nums" data-i="${idx}" data-f="ash" value="${(p.ash||0).toFixed(2)}" onchange="editStockField(${idx},'ash',this.value)"></td>
+      <td class="px-2 py-2.5"><input class="w-20 border rounded px-1 py-0.5 text-right tabular-nums" data-i="${idx}" data-f="heat" value="${p.heat||0}" onchange="editStockField(${idx},'heat',this.value)"></td>
       <td class="px-2 py-2.5 text-right tabular-nums">${unit.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${money}</td>
     </tr>`;
@@ -131,6 +131,14 @@ function renderInventory(){
     <td class="px-2 py-2.5 text-right tabular-nums">${sStock>0 ? (sMoney/sStock).toFixed(2) : "0.00"}</td>
     <td class="px-2 py-2.5 text-right tabular-nums">${sMoney}</td>
   </tr>`;
+}
+// 库存台账直接修改化验指标(水/硫/挥发/灰份/热值),改完自动保存并重算汇总
+function editStockField(idx, field, val){
+  const v=parseFloat(val); if(isNaN(v)) return;
+  if(!purchaseList[idx]) return;
+  purchaseList[idx][field]=v;
+  saveAllData();
+  renderInventory();
 }
 loadAllData();
 initPage("inventory.html");
