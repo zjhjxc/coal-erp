@@ -54,6 +54,7 @@
     <p>加权全水：<span id="mixMt">0.00</span>% | 全硫：<span id="mixSt">0.00</span>%</p>
     <p>空干挥发：<span id="mixAdVola">0.00</span>% | 收到挥发：<span id="mixArVola">0.00</span>% | 灰份：<span id="mixAsh">0.00</span>%</p>
     <p>加权热值：<span id="mixHeat">0</span> 大卡</p>
+    <p>平均单价：<span id="mixAvgPrice">0.00</span> 元/吨</p>
   </div>
 
   <div class="bg-white rounded-xl p-3">
@@ -116,7 +117,7 @@ function renderMixSourceTable(){
 function calcMixCoal(){
   const boxes=document.querySelectorAll(".mix-check:checked");
   mixSelectedList=[];
-  let totalTon=0,sumMt=0,sumSt=0,sumAdV=0,sumArV=0,sumAsh=0,sumHeat=0;
+  let totalTon=0,sumMt=0,sumSt=0,sumAdV=0,sumArV=0,sumAsh=0,sumHeat=0,sumCost=0;
   boxes.forEach(cb=>{
     const idx=Number(cb.dataset.key), item=allMixSource[idx];
     const input=document.querySelector(`.mix-weight-input[data-key="${idx}"]`);
@@ -127,6 +128,7 @@ function calcMixCoal(){
     mixSelectedList.push({source:item, useTon:useW});
     totalTon+=useW; sumMt+=item.totalWater*useW; sumSt+=item.sulfur*useW;
     sumAdV+=(item.adVola||0)*useW; sumArV+=item.arVola*useW; sumAsh+=(item.ash||0)*useW; sumHeat+=item.heat*useW;
+    sumCost+=((item.totalCostAll||0)/((item._settle||item.settle)||1))*useW;
   });
   document.getElementById("mixTotalTon").innerText=totalTon.toFixed(2);
   document.getElementById("mixMt").innerText=totalTon>0?(sumMt/totalTon).toFixed(2):'0.00';
@@ -135,6 +137,7 @@ function calcMixCoal(){
   document.getElementById("mixArVola").innerText=totalTon>0?(sumArV/totalTon).toFixed(2):'0.00';
   document.getElementById("mixAsh").innerText=totalTon>0?(sumAsh/totalTon).toFixed(2):'0.00';
   document.getElementById("mixHeat").innerText=totalTon>0?roundInt(sumHeat/totalTon):0;
+  document.getElementById("mixAvgPrice").innerText=totalTon>0?(sumCost/totalTon).toFixed(2):'0.00';
 }
 function saveMixPlan(){
   const totalTon=parseFloat(document.getElementById("mixTotalTon").innerText);
