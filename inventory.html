@@ -104,22 +104,27 @@ function renderInventory(){
     const money = roundInt(stock*unit);
     sSettle+=settle; sUsed+=used; sStock+=stock; sMoney+=money;
     sWaterW+=(p.totalWater||0)*stock; sSulfurW+=(p.sulfur||0)*stock; sVolaW+=(p.arVola||0)*stock; sAshW+=(p.ash||0)*stock; sHeatW+=(p.heat||0)*stock;
+    const ed = (idx===editingIdx); // 是否编辑模式
+    const cIn=(f,v)=> ed ? `<input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-yellow-50" data-ef="${f}" value="${v}">` : `<span>${v}</span>`;
     tb.innerHTML += `<tr class="border-t border-slate-100 odd:bg-white even:bg-emerald-50/40 hover:bg-emerald-50/60">
       <td class="px-2 py-2.5">${p.to||p.purchaseTo||"-"}</td>
-      <td class="px-2 py-2.5">${p.from||""}</td>
+      <td class="px-2 py-2.5">${ed?`<input class="w-full border rounded px-1 py-0.5 bg-yellow-50" data-ef="from" value="${p.from||""}">`:(p.from||"")}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${settle.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${used.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums font-medium">${stock.toFixed(2)}</td>
-      <td class="px-1 py-2.5"><input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-white" data-i="${idx}" data-f="totalWater" value="${(p.totalWater||0).toFixed(2)}" onchange="editStockField(${idx},'totalWater',this.value)"></td>
-      <td class="px-1 py-2.5"><input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-white" data-i="${idx}" data-f="sulfur" value="${(p.sulfur||0).toFixed(2)}" onchange="editStockField(${idx},'sulfur',this.value)"></td>
-      <td class="px-1 py-2.5"><input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-white" data-i="${idx}" data-f="arVola" value="${(p.arVola||0).toFixed(2)}" onchange="editStockField(${idx},'arVola',this.value)"></td>
-      <td class="px-1 py-2.5"><input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-white" data-i="${idx}" data-f="ash" value="${(p.ash||0).toFixed(2)}" onchange="editStockField(${idx},'ash',this.value)"></td>
-      <td class="px-1 py-2.5"><input class="w-full border rounded px-1 py-0.5 text-right tabular-nums bg-white" data-i="${idx}" data-f="heat" value="${p.heat||0}" onchange="editStockField(${idx},'heat',this.value)"></td>
+      <td class="px-1 py-2.5">${cIn("totalWater",(p.totalWater||0).toFixed(2))}</td>
+      <td class="px-1 py-2.5">${cIn("sulfur",(p.sulfur||0).toFixed(2))}</td>
+      <td class="px-1 py-2.5">${cIn("arVola",(p.arVola||0).toFixed(2))}</td>
+      <td class="px-1 py-2.5">${cIn("ash",(p.ash||0).toFixed(2))}</td>
+      <td class="px-1 py-2.5">${cIn("heat",p.heat||0)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${unit.toFixed(2)}</td>
       <td class="px-2 py-2.5 text-right tabular-nums">${money}</td>
       <td class="px-1 py-2 text-center">
-        <button onclick="editBatch(${idx})" class="block w-full mb-1 px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#60a5fa,#2563eb),box-shadow:0 2px 6px rgba(37,99,235,.3)">修改</button>
-        <button onclick="delBatch(${idx})" class="block w-full px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#f87171,#dc2626),box-shadow:0 2px 6px rgba(220,38,38,.3)">删除</button>
+        ${ed
+          ? `<button onclick="saveBatch(${idx})" class="block w-full mb-1 px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#34d399,#059669),box-shadow:0 2px 6px rgba(5,150,105,.3)">保存</button>
+             <button onclick="cancelBatch()" class="block w-full px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#9ca3af,#6b7280)">取消</button>`
+          : `<button onclick="editBatch(${idx})" class="block w-full mb-1 px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#60a5fa,#2563eb),box-shadow:0 2px 6px rgba(37,99,235,.3)">修改</button>
+             <button onclick="delBatch(${idx})" class="block w-full px-2 py-1 rounded text-white text-xs" style="background:linear-gradient(135deg,#f87171,#dc2626),box-shadow:0 2px 6px rgba(220,38,38,.3)">删除</button>`}
       </td>
     </tr>`;
   });
@@ -139,6 +144,7 @@ function renderInventory(){
     <td class="px-2 py-2.5"></td>
   </tr>`;
 }
+var editingIdx=-1; // 当前编辑的行(-1=无)
 // 库存台账直接修改化验指标(水/硫/挥发/灰份/热值),改完自动保存并重算汇总
 function editStockField(idx, field, val){
   const v=parseFloat(val); if(isNaN(v)) return;
@@ -147,16 +153,27 @@ function editStockField(idx, field, val){
   saveAllData();
   renderInventory();
 }
-// 修改:跳转到采购页定位该批次
-function editBatch(idx){
-  const b=purchaseList[idx]; if(!b) return;
-  location.href="purchase.html?edit="+(b.no||"");
+// 进入编辑模式
+function editBatch(idx){ editingIdx=idx; renderInventory(); }
+// 取消编辑
+function cancelBatch(){ editingIdx=-1; renderInventory(); }
+// 保存编辑:读取本行黄色输入框的值写回
+function saveBatch(idx){
+  document.querySelectorAll("#inventoryBody input[data-ef]").forEach(inp=>{
+    const f=inp.dataset.ef; let v=inp.value;
+    if(f==="from"){ purchaseList[idx].from=v; }
+    else { v=parseFloat(v); if(!isNaN(v)) purchaseList[idx][f]=v; }
+  });
+  editingIdx=-1;
+  saveAllData();
+  renderInventory();
 }
 // 删除:确认后移除该批次库存
 function delBatch(idx){
   const b=purchaseList[idx]; if(!b) return;
   if(!confirm("确认删除该批次【"+(b.from||b.no)+"】？\n库存将一并移除，此操作不可恢复！")) return;
   purchaseList.splice(idx,1);
+  editingIdx=-1;
   saveAllData();
   renderInventory();
 }
