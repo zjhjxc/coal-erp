@@ -175,11 +175,19 @@ function dlTemplate(name){
 function uploadCert(){
   const f=document.getElementById("certFile").files[0];
   if(!f){ alert("请先选择文件"); return; }
-  if(f.size>1.5*1024*1024){ alert("文件不能超过1.5MB（手机照片建议裁剪后再传）"); return; }
+  if(f.size>1*1024*1024){ alert("文件不能超过1MB，请压缩或裁剪照片后再传"); return; }
+  const btn=event.target; btn.disabled=true;
   const r=new FileReader();
   r.onload=function(){
     certs.push({name:f.name, size:f.size, type:f.type||"", data:r.result, time:new Date().toLocaleString()});
-    cloudSaveCerts().then(function(){ renderCerts(); alert("已上传云端"); });
+    cloudSaveCerts().then(function(){
+      btn.disabled=false;
+      renderCerts();
+      alert("已上传云端，其他设备同步可见");
+    }).catch(function(){
+      btn.disabled=false;
+      alert("上传云端失败，请稍后重试或压缩文件");
+    });
     document.getElementById("certFile").value="";
   };
   r.readAsDataURL(f);
