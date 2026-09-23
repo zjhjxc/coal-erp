@@ -37,7 +37,25 @@
   </div>
 </div>
 
-<script src="data.20260922b.js"></script>
+<div class="p-4 border rounded bg-gray-50 mt-4">
+  <h3 class="text-lg font-bold mb-2">📋 资质空白表</h3>
+  <p class="mb-3 text-sm text-gray-600">下载空白资质表模板，填写后可上传存档；已上传的资质文件可随时下载或删除。</p>
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-center mb-4">
+    <button onclick="dlTemplate('营业执照')" class="px-2 py-2 bg-yellow-500 text-white rounded text-sm">营业执照(空白表)</button>
+    <button onclick="dlTemplate('煤炭经营许可证')" class="px-2 py-2 bg-amber-600 text-white rounded text-sm">经营许可证(空白表)</button>
+    <button onclick="dlTemplate('质检报告')" class="px-2 py-2 bg-teal-500 text-white rounded text-sm">质检报告(空白表)</button>
+    <button onclick="dlTemplate('过磅单')" class="px-2 py-2 bg-cyan-600 text-white rounded text-sm">过磅单(空白表)</button>
+    <button onclick="dlTemplate('化验报告')" class="px-2 py-2 bg-indigo-500 text-white rounded text-sm">化验报告(空白表)</button>
+  </div>
+  <div class="flex items-center gap-2 mb-3">
+    <input type="file" id="certFile" class="text-sm">
+    <button onclick="uploadCert()" class="px-3 py-2 bg-green-600 text-white rounded text-sm">上传资质文件</button>
+  </div>
+  <table class="w-full text-sm border">
+    <thead><tr class="bg-gray-100"><th class="border px-2 py-1 text-left">文件名</th><th class="border px-2 py-1">大小</th><th class="border px-2 py-1">操作</th></tr></thead>
+    <tbody id="certList"></tbody>
+  </table>
+</div>
 <script>
 function exportAll(){
   const wb = XLSX.utils.book_new();
@@ -126,8 +144,65 @@ function exportFinance(){
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(fd),"财务对账");
   XLSX.writeFile(wb,"财务对账.xlsx");
 }
+// ===== 资质空白表：下载模板 / 上传 / 下载 / 删除 =====
+const CERT_KEY="coalCerts";
+function getCerts(){ try{ return JSON.parse(localStorage.getItem(CERT_KEY)||"[]"); }catch(e){ return []; } }
+function setCerts(a){ localStorage.setItem(CERT_KEY, JSON.stringify(a)); }
+function dlTemplate(name){
+  const headers={
+    "营业执照":["单位名称","统一社会信用代码","法人","注册地址","有效期"],
+    "煤炭经营许可证":["单位名称","许可证号","法定代表人","地址","有效期"],
+    "质检报告":["样品名称","检验项目","标准值","检验值","结论"],
+    "过磅单":["车牌号","货物名称","毛重","皮重","净重","司磅员"],
+    "化验报告":["样品编号","全水Mt","全硫St","空干挥发","收到挥发","灰份","热值"]
+  }[name]||["项目","内容"];
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([headers]),"空白表");
+  XLSX.writeFile(wb,name+"_空白表.xlsx");
+}
+function uploadCert(){
+  const f=document.getElementById("certFile").files[0];
+  if(!f){ alert("请先选择文件"); return; }
+  if(f.size>2.5*1024*1024){ alert("文件不能超过2.5MB（手机照片建议裁剪后再传）"); return; }
+  const r=new FileReader();
+  r.onload=function(){
+    const arr=getCerts();
+    arr.push({name:f.name, size:f.size, type:f.type||"", data:r.result, time:new Date().toLocaleString()});
+    setCerts(arr);
+    document.getElementById("certFile").value="";
+    renderCerts();
+    alert("上传成功");
+  };
+  r.readAsDataURL(f);
+}
+function downloadCert(i){
+  const c=getCerts()[i]; if(!c) return;
+  const a=document.createElement("a");
+  a.href=c.data; a.download=c.name; a.click();
+}
+function delCert(i){
+  if(!confirm("确认删除该资质文件？")) return;
+  const arr=getCerts(); arr.splice(i,1); setCerts(arr); renderCerts();
+}
+function renderCerts(){
+  const tb=document.getElementById("certList");
+  const arr=getCerts();
+  tb.innerHTML="";
+  if(!arr.length){ tb.innerHTML='<tr><td colspan="3" class="border px-2 py-2 text-center text-gray-400">暂无上传的资质文件</td></tr>'; return; }
+  arr.forEach((c,i)=>{
+    const kb=(c.size/1024).toFixed(1);
+    tb.innerHTML+=`<tr>
+      <td class="border px-2 py-1">${c.name}<br><span class="text-xs text-gray-400">${c.time||""}</span></td>
+      <td class="border px-2 py-1 text-center">${kb}KB</td>
+      <td class="border px-2 py-1 text-center">
+        <button onclick="downloadCert(${i})" class="px-2 py-1 bg-blue-500 text-white rounded text-xs">下载</button>
+        <button onclick="delCert(${i})" class="px-2 py-1 bg-red-500 text-white rounded text-xs ml-1">删除</button>
+      </td></tr>`;
+  });
+}
 loadAllData();
 initPage("export.html");
+renderCerts();
 </script>
 </body>
 </html>
