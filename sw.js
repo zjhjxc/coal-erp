@@ -1,5 +1,5 @@
 // 煤炭进销存 Service Worker：让 Chrome 识别为可安装 App（离线缓存 + 安装能力）
-const CACHE = 'coal-erp-v1';
+const CACHE = 'coal-erp-v2';
 // 需要预缓存的入口页（离线可用核心入口）
 const PRECACHE = [
   './',
