@@ -240,11 +240,14 @@ function _cfetch(path, opts){
     .catch(function(){ return null; });
 }
 
-// 当前场地业务数据 → 云端 upsert
+// 当前场地业务数据 → 云端 upsert（保留资质 certs，避免覆盖丢失）
 function cloudPushAppState(){
   var site = currentSite(); if(!site) return;
-  var payload = { purchaseList: purchaseList, saleList: saleList, coalMixRecordList: coalMixRecordList, stockStartTon: stockStartTon, stockStartMoney: stockStartMoney };
-  return _cfetch("app_state", { method:"POST", headers:{ "Prefer":"resolution=merge-duplicates" }, body: JSON.stringify([{ site: site, payload: payload, updated_at: new Date().toISOString() }]) });
+  var base = { purchaseList: purchaseList, saleList: saleList, coalMixRecordList: coalMixRecordList, stockStartTon: stockStartTon, stockStartMoney: stockStartMoney };
+  return cloudPullAppState().then(function(existing){
+    if(existing && existing.certs) base.certs = existing.certs;
+    return _cfetch("app_state", { method:"POST", headers:{ "Prefer":"resolution=merge-duplicates" }, body: JSON.stringify([{ site: site, payload: base, updated_at: new Date().toISOString() }]) });
+  });
 }
 // 从云端拉取当前场地业务数据
 function cloudPullAppState(){
@@ -264,11 +267,14 @@ function cloudPullAppStateBySite(site){
     return pl;
   });
 }
-// 按指定煤场写回云端数据(配煤跨煤场扣库存用)
+// 按指定煤场写回云端数据(配煤跨煤场扣库存用)（保留资质 certs，避免覆盖丢失）
 function cloudPushAppStateBySite(site, data){
   if(!site || !data) return Promise.resolve(null);
-  var payload = { purchaseList:data.purchaseList||[], saleList:data.saleList||[], coalMixRecordList:data.coalMixRecordList||[], stockStartTon:data.stockStartTon||0, stockStartMoney:data.stockStartMoney||0 };
-  return _cfetch("app_state", { method:"POST", headers:{ "Prefer":"resolution=merge-duplicates" }, body: JSON.stringify([{ site:site, payload:payload, updated_at:new Date().toISOString() }]) });
+  var base = { purchaseList:data.purchaseList||[], saleList:data.saleList||[], coalMixRecordList:data.coalMixRecordList||[], stockStartTon:data.stockStartTon||0, stockStartMoney:data.stockStartMoney||0 };
+  return cloudPullAppStateBySite(site).then(function(existing){
+    if(existing && existing.certs) base.certs = existing.certs;
+    return _cfetch("app_state", { method:"POST", headers:{ "Prefer":"resolution=merge-duplicates" }, body: JSON.stringify([{ site:site, payload:base, updated_at:new Date().toISOString() }]) });
+  });
 }
 // 用户表 → 云端 upsert
 function cloudPushUsers(list){
