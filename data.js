@@ -20,7 +20,7 @@ let stockStartMoney = 0;
         '.bg-white.rounded-2xl:hover{box-shadow:0 4px 8px rgba(90,60,10,.08),0 24px 50px rgba(90,60,10,.16);transform:translateY(-3px)}',
         '.bg-white.rounded-xl{box-shadow:0 3px 12px rgba(90,60,10,.09),inset 0 1px 0 rgba(255,255,255,.65)}',
         'table thead tr{background:linear-gradient(180deg,#f7f0dd,#ece0c0)!important}',
-        'table thead th{color:#5a4520!important;font-weight:600;letter-spacing:.02em}',
+        'table thead th{color:#5a4520!important;font-weight:700;letter-spacing:.02em}',
         'table tbody tr{transition:background .15s ease}',
         'table tbody tr:hover{background:#fbf6e9!important}',
         'button{transition:filter .15s,transform .1s,box-shadow .15s}',
@@ -51,8 +51,8 @@ let stockStartMoney = 0;
         '.stat-val{font-size:20px;font-weight:700;margin:3px 0;line-height:1.2}',
         '.stat-val span{font-size:12px;font-weight:400;opacity:.85;margin-left:2px}',
         '.stat-sub{font-size:12px;opacity:.9}',
-        'th{background:linear-gradient(180deg,#5a6db8,#3b4a7a 55%,#2b3560)!important;box-shadow:inset 0 2px 0 rgba(255,255,255,.28), inset 0 -2px 0 rgba(0,0,0,.25)}',
-        'th, th *{color:#fff!important;font-weight:600}'
+        'th{background:linear-gradient(180deg,#fdfaf0,#f1e9d3 55%,#e2d6b2)!important;box-shadow:inset 0 2px 0 rgba(255,255,255,.85), inset 0 -2px 0 rgba(0,0,0,.08)}',
+        'th, th *{color:#5a4520!important;font-weight:700}'
       ].join("\n");
       if(document.head) document.head.appendChild(st);
       else document.documentElement.appendChild(st);
@@ -240,11 +240,14 @@ function _cfetch(path, opts){
     .catch(function(){ return null; });
 }
 
-// 当前场地业务数据 → 云端 upsert
+// 当前场地业务数据 → 云端 upsert（保留资质 certs，避免覆盖丢失）
 function cloudPushAppState(){
   var site = currentSite(); if(!site) return;
-  var payload = { purchaseList: purchaseList, saleList: saleList, coalMixRecordList: coalMixRecordList, stockStartTon: stockStartTon, stockStartMoney: stockStartMoney };
-  return _cfetch("app_state", { method:"POST", headers:{ "Prefer":"resolution=merge-duplicates" }, body: JSON.stringify([{ site: site, payload: payload, updated_at: new Date().toISOString() }]) });
+  var base = { purchaseList: purchaseList, saleList: saleList, coalMixRecordList: coalMixRecordList, stockStartTon: stockStartTon, stockStartMoney: stockStartMoney };
+  return cloudPullAppState().then(function(existing){
+    if(existing && existing.certs) base.certs = existing.certs;
+    return _cfetch("app_state", { method:"POST", headers:{ "Prefer":"resolution=merge-duplicates" }, body: JSON.stringify([{ site: site, payload: base, updated_at: new Date().toISOString() }]) });
+  });
 }
 // 从云端拉取当前场地业务数据
 function cloudPullAppState(){
@@ -252,6 +255,25 @@ function cloudPullAppState(){
   return _cfetch("app_state?site=eq." + encodeURIComponent(site) + "&select=payload").then(function(rows){
     if(!Array.isArray(rows) || !rows.length) return null;
     return (rows[0] && rows[0].payload) || null;
+  });
+}
+// 按指定煤场拉取云端数据(配煤跨煤场选料用)
+function cloudPullAppStateBySite(site){
+  if(!site) return Promise.resolve(null);
+  return _cfetch("app_state?site=eq." + encodeURIComponent(site) + "&select=payload").then(function(rows){
+    if(!Array.isArray(rows) || !rows.length) return null;
+    var pl = rows[0] && rows[0].payload ? rows[0].payload : null;
+    if(typeof pl === "string"){ try{ pl = JSON.parse(pl); }catch(e){ pl = null; } }
+    return pl;
+  });
+}
+// 按指定煤场写回云端数据(配煤跨煤场扣库存用)（保留资质 certs，避免覆盖丢失）
+function cloudPushAppStateBySite(site, data){
+  if(!site || !data) return Promise.resolve(null);
+  var base = { purchaseList:data.purchaseList||[], saleList:data.saleList||[], coalMixRecordList:data.coalMixRecordList||[], stockStartTon:data.stockStartTon||0, stockStartMoney:data.stockStartMoney||0 };
+  return cloudPullAppStateBySite(site).then(function(existing){
+    if(existing && existing.certs) base.certs = existing.certs;
+    return _cfetch("app_state", { method:"POST", headers:{ "Prefer":"resolution=merge-duplicates" }, body: JSON.stringify([{ site:site, payload:base, updated_at:new Date().toISOString() }]) });
   });
 }
 // 用户表 → 云端 upsert
@@ -311,9 +333,19 @@ function _pullCloud(){
   });
 }
 
-// 按多级策略找到配煤原料对应的当前采购批次（单号→矿点+吨位→矿点有库存）
+// 按多级策略找到配煤原料对应的采购批次（单号→矿点+吨位→矿点有库存），支持跨煤场
 function findSrcForMix(s){
   const rec = s && s.source; if(!rec) return null;
+  const curSite=(typeof currentSite==='function')?currentSite():"";
+  // 跨煤场原料:从对应煤场缓存数据找
+  if(rec._site && rec._site!==curSite && typeof allSiteData!=="undefined" && allSiteData[rec._site]){
+    const list = (allSiteData[rec._site] && allSiteData[rec._site].purchaseList)||[];
+    if(rec.no){ const f=list.filter(p=>p.no===rec.no); if(f.length) return f[0]; }
+    const bySame=list.filter(p=>p.from===rec.from && p.from && Math.abs((p.settle||0)-(rec.settle||0))<0.001);
+    if(bySame.length) return bySame[0];
+    const byFrom=list.filter(p=>p.from===rec.from && p.from && ((p.stockRemain ?? p.settle)>0));
+    if(byFrom.length) return byFrom[0];
+  }
   if(rec.no){ const f=purchaseList.filter(p=>p.no===rec.no); if(f.length) return f[0]; }
   const bySame=purchaseList.filter(p=>p.from===rec.from && p.from && Math.abs((p.settle||0)-(rec.settle||0))<0.001);
   if(bySame.length) return bySame[0];
@@ -543,7 +575,6 @@ function initPage(active){
   }
   function scan(){
     document.querySelectorAll('button').forEach(function(b){
-      if(isDanger(b)) return;
       apply(b);
     });
   }
