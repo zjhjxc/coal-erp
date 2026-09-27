@@ -39,13 +39,17 @@
 
 <div class="p-4 border rounded bg-gray-50 mt-4">
   <h3 class="text-lg font-bold mb-2">📋 资质空白表</h3>
-  <p class="mb-3 text-sm text-gray-600">下载空白资质表模板；已上传的资质文件可随时下载或删除。</p>
+  <p class="mb-3 text-sm text-gray-600">下载空白资质表模板，填写后可上传存档；已上传的资质文件可随时下载或删除。</p>
   <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-center mb-4">
     <button onclick="dlTemplate('营业执照')" class="px-2 py-2 bg-yellow-500 text-white rounded text-sm">营业执照(空白表)</button>
     <button onclick="dlTemplate('煤炭经营许可证')" class="px-2 py-2 bg-amber-600 text-white rounded text-sm">经营许可证(空白表)</button>
     <button onclick="dlTemplate('质检报告')" class="px-2 py-2 bg-teal-500 text-white rounded text-sm">质检报告(空白表)</button>
     <button onclick="dlTemplate('过磅单')" class="px-2 py-2 bg-cyan-600 text-white rounded text-sm">过磅单(空白表)</button>
     <button onclick="dlTemplate('化验报告')" class="px-2 py-2 bg-indigo-500 text-white rounded text-sm">化验报告(空白表)</button>
+  </div>
+  <div class="flex items-center gap-2 mb-3">
+    <input type="file" id="certFile" class="text-sm">
+    <button onclick="uploadCert(this)" class="px-3 py-2 bg-green-600 text-white rounded text-sm">上传资质文件</button>
   </div>
   <table class="w-full text-sm border">
     <thead><tr class="bg-gray-100"><th class="border px-2 py-1 text-left">文件名</th><th class="border px-2 py-1">大小</th><th class="border px-2 py-1">操作</th></tr></thead>
@@ -169,6 +173,26 @@ function dlTemplate(name){
   const wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([headers]),"空白表");
   XLSX.writeFile(wb,name+"_空白表.xlsx");
+}
+function uploadCert(btn){
+  const f=document.getElementById("certFile").files[0];
+  if(!f){ alert("请先选择文件"); return; }
+  if(f.size>1*1024*1024){ alert("文件不能超过1MB，请压缩或裁剪照片后再传"); return; }
+  if(btn) btn.disabled=true;
+  const r=new FileReader();
+  r.onload=function(){
+    certs.push({name:f.name, size:f.size, type:f.type||"", data:r.result, time:new Date().toLocaleString()});
+    cloudSaveCerts().then(function(){
+      if(btn) btn.disabled=false;
+      renderCerts();
+      alert("已上传云端，其他设备同步可见");
+    }).catch(function(){
+      if(btn) btn.disabled=false;
+      alert("上传云端失败，请稍后重试或压缩文件");
+    });
+    document.getElementById("certFile").value="";
+  };
+  r.readAsDataURL(f);
 }
 function downloadCert(i){
   const c=certs[i]; if(!c) return;
