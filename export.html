@@ -156,10 +156,13 @@ function cloudGetCerts(){
   }).catch(function(){ certs=[]; renderCerts(); });
 }
 function cloudSaveCerts(){
-  return cloudPullAppStateBySite(CERT_SITE).then(function(p){
-    p = p || { purchaseList:[], saleList:[], coalMixRecordList:[] };
-    p.certs = certs;
-    return _cfetch("app_state?site=eq."+encodeURIComponent(CERT_SITE), { method:"PATCH", headers:{ "Prefer":"return=minimal" }, body: JSON.stringify({ payload:p }) });
+  // 先拉云端最新业务数据，保留并只更新 certs；拉取失败时用本地数据兜底，避免覆盖丢数据
+  return cloudPullAppStateBySite(CERT_SITE).then(function(existing){
+    var base = existing && typeof existing === 'object'
+      ? existing
+      : { purchaseList: (typeof purchaseList!=='undefined'?purchaseList:[]), saleList: (typeof saleList!=='undefined'?saleList:[]), coalMixRecordList: (typeof coalMixRecordList!=='undefined'?coalMixRecordList:[]), stockStartTon: (typeof stockStartTon!=='undefined'?stockStartTon:0), stockStartMoney: (typeof stockStartMoney!=='undefined'?stockStartMoney:0) };
+    base.certs = certs;
+    return _cfetch("app_state?site=eq."+encodeURIComponent(CERT_SITE), { method:"PATCH", headers:{ "Prefer":"return=minimal" }, body: JSON.stringify({ payload:base }) });
   });
 }
 function dlTemplate(name){
